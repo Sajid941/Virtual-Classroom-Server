@@ -18,9 +18,9 @@ mongoose
 //middleware
 app.use(cors())
 app.use(express.json())
-app.use('/users', userRoute);
 async function run() {
     try {
+        app.use('/users', userRoute);
         app.get("/developers", async (req, res) => {
             const result = await developers.find({});
             res.send(result);
