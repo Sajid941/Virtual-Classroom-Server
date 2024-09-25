@@ -3,6 +3,7 @@ const cors = require('cors');
 const { default: mongoose } = require('mongoose');
 const port = 3000 || process.env.PORT
 const app = express()
+const { developers } = require("./models/developer")
 require('dotenv').config()
 
 mongoose
@@ -15,6 +16,20 @@ mongoose
     })
 //middleware
 app.use(cors())
+app.use(express.json())
+
+async function run() {
+    try {
+        app.get("/developers", async (req, res) => {
+            const result = await developers.find({});
+            res.send(result);
+        })
+    }
+    finally {
+
+    }
+}
+run().catch(console.dir)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
