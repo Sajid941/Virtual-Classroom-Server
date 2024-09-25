@@ -6,7 +6,7 @@ const app = express()
 require('dotenv').config()
 
 mongoose
-    .connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xweyicz.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=Cluster0`)
+    .connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@virtualclassrommcluster.aq29t.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=VirtualClassrommCluster`)
     .then(() => {
         console.log("MongoDb Connected");
     })
