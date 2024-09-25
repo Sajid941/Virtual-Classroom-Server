@@ -6,7 +6,8 @@ require("dotenv").config(); // Load environment variables
 const app = express();
 const port = process.env.PORT || 3000;
 
-const userRoute = require('./Routes/userRoutes'); // Correct import for router
+const userRoute = require("./Routes/userRoutes"); // Correct import for router
+const classesRoute = require("./Routes/classesRoutes"); // Correct import for router
 
 // MongoDB Connection
 mongoose
@@ -22,11 +23,22 @@ mongoose
   });
 
 // Middleware
-app.use(cors());
+// middleware
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use(express.json()); // Parse incoming JSON
 
+
+
 // Routes
-app.use('/users', userRoute); // Ensure it's using the correct router
+app.use("/users", userRoute); 
+app.use("/classes", classesRoute);
+
+
 
 // Default Route
 app.get("/", (req, res) => {
