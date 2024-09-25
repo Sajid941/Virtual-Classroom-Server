@@ -6,7 +6,8 @@ require("dotenv").config(); // Load environment variables
 const app = express();
 const port = process.env.PORT || 3000;
 
-const userRoute = require('./Routes/userRoutes'); // Correct import for router
+const userRoute = require('./Routes/userRoutes'); 
+const classesRoute = require('./Routes/classesRoutes'); 
 
 // MongoDB Connection
 mongoose
@@ -26,7 +27,8 @@ app.use(cors());
 app.use(express.json()); // Parse incoming JSON
 
 // Routes
-app.use('/users', userRoute); // Ensure it's using the correct router
+app.use('/users', userRoute); 
+app.use('/classes', classesRoute); 
 
 // Default Route
 app.get("/", (req, res) => {
