@@ -1,39 +1,40 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-require("dotenv").config(); // Load environment variables
+const express = require('express')
+const cors = require('cors');
+const { default: mongoose } = require('mongoose');
+const port = 3000 || process.env.PORT
+const app = express()
+require('dotenv').config()
+const { developers } = require("./models/developer")
+const userRoute = require("./Routes/userRoutes")
 
-const app = express();
-const port = process.env.PORT || 3000;
-
-const userRoute = require('./Routes/userRoutes'); // Correct import for router
-
-// MongoDB Connection
 mongoose
-  .connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@virtualclassrommcluster.aq29t.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=VirtualClassrommCluster`,
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
-  .then(() => {
-    console.log("MongoDB Connected");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-  });
+    .connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@virtualclassrommcluster.aq29t.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=VirtualClassrommCluster`)
+    .then(() => {
+        console.log("MongoDb Connected");
+    })
+    .catch(err => {
+        console.error(err)
+    })
+//middleware
+app.use(cors())
+app.use(express.json())
+app.use('/users', userRoute);
+async function run() {
+    try {
+        app.get("/developers", async (req, res) => {
+            const result = await developers.find({});
+            res.send(result);
+        })
+    }
+    finally {
 
-// Middleware
-app.use(cors());
-app.use(express.json()); // Parse incoming JSON
+    }
+}
+run().catch(console.dir)
+app.get('/', (req, res) => {
+    res.send('Hello World!')
+})
 
-// Routes
-app.use('/users', userRoute); // Ensure it's using the correct router
-
-// Default Route
-app.get("/", (req, res) => {
-  res.send("Hello From Class Net server!");
-});
-
-// Start the Server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
