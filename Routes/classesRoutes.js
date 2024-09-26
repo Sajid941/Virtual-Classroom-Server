@@ -41,6 +41,23 @@ router.get('/teacher', async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+router.get('/student', async (req, res) => {
+    const email = req.query.email;
+    if (!email) {
+        return res.status(400).json({ message: 'Email query parameter is required' });
+    }
+    try {
+        // Find classes where the student's email exists
+        const classes = await Class.find({ 'students.email': email });
+        if (classes.length === 0) {
+            return res.status(404).json({ message: 'No classes found for this student' });
+        }
+        res.json(classes);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 router.get('/classid', async (req, res) => {
     // GET /classes/classid?id=c001
     const id = req.query.id;
