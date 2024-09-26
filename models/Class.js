@@ -119,7 +119,11 @@ const classSchema = new mongoose.Schema({
   },
   resources: [resourceSchema], // Array of resources
   students: [studentSchema], // Array of students
-  assignments: [assignmentSchema] //Array of assignments
+  assignments: [assignmentSchema], //Array of assignments
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  }
 });
 
 // Exporting the class model
