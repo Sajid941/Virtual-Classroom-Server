@@ -93,7 +93,11 @@ const classSchema = new mongoose.Schema({
     required: true
   },
   resources: [resourceSchema], // Array of resources
-  students: [studentSchema] // Array of students
+  students: [studentSchema], // Array of students
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  }
 });
 
 // Exporting the class model
