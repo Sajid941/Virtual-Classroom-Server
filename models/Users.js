@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: "https://via.placeholder.com/40",
   },
   createdAt: {
     type: Date,
