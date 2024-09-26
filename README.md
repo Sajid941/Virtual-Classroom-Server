@@ -8,13 +8,8 @@ ClassNet is a virtual classroom management system where teachers can create clas
 - [Environment Variables](#environment-variables)
 - [Running the Server](#running-the-server)
 - [API Endpoints](#api-endpoints)
+  - [Users](#users)
   - [Classes](#classes)
-  - [Teachers](#teachers)
-  - [Students](#students)
-- [Models](#models)
-  - [Class Schema](#class-schema)
-- [Error Handling](#error-handling)
-- [License](#license)
 
 ## Installation
 
@@ -32,19 +27,25 @@ ClassNet is a virtual classroom management system where teachers can create clas
 
 ## Environment Variables
 
+## Environment Variables
+
 Create a `.env` file at the root of your project and add the following environment variables:
 
-````plaintext
+```bash
 MONGO_URI=mongodb://localhost:27017/classnet
 PORT=5000
 JWT_SECRET=your-secret-key
 DB_PASS
 DB_USER
+```
 
-3. Run on local machine:
-    ```bash
-    nodemon index.js
-    ```
+## Environment Variables
+
+Run on local machine:
+
+```bash
+nodemon index.js
+```
 
 ## API Endpoints
 
@@ -53,29 +54,36 @@ The ClassNet backend provides various endpoints for interacting with the class a
 ### Classes
 
 #### GET /classes
+
 Fetch classes.
 
 - **URL**: `/users`
- ```bash
-   GET /users/email?email=john@example.com
-   ```
- ```bash
-   POST /users
-   ```
- 
+
+```bash
+  GET /users/email?email=john@example.com
+```
+
+```bash
+  POST /users
+```
+
 - **URL**: `/classes`
- ```bash
-   GET /classes/classid?id={classId}
-   ```
- ```bash
-   POST /classes
-   ```
- ```bash
-   GET /classes/teacher?email=teacher@example.com
-   ```
- ```bash
-   GET /classes/student?email=student@example.com
-   ```
+
+```bash
+  GET /classes/classid?id={classId}
+```
+
+```bash
+  POST /classes
+```
+
+```bash
+  GET /classes/teacher?email=teacher@example.com
+```
+
+```bash
+  GET /classes/student?email=student@example.com
+```
 
 ```json
 [
@@ -97,4 +105,4 @@ Fetch classes.
     ]
   }
 ]
-````
+```
