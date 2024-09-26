@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const multer  = require('multer')
+const path = require('path');
 const Class = require('../models/Class');
 
 // Fetch all classes
@@ -71,6 +73,54 @@ router.get('/classid', async (req, res) => {
             return res.status(404).json({ message: "No classes found for this teacher" });
         }
         res.json(classe);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, path.join(__dirname, '../assignmentUploads'))
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname)
+    }
+  })
+  
+const upload = multer({ storage: storage })
+
+// Patch for adding assignment
+router.patch('/:classId', upload.single('file'), async (req, res) => {
+    const { classId } = req.params;
+    
+    const { title, description, dueDate } = req.body;
+
+    if ( !title || !description || !dueDate || !req.file) {
+        return res.status(400).json({ message: 'Missing required fields for the assignment' });
+    }
+
+    const fileUrl = `/assignmentUploads/${req.file.filename}`;
+
+    const newAssignment = {
+        title,
+        description,
+        dueDate,
+        fileUrl,
+    };
+
+    try {
+        // Find the class by classId and update its assignments array
+        const updatedClass = await Class.findOneAndUpdate(
+            { classId: classId },
+            { $push: { assignments: newAssignment } },
+            { new: true }
+        );
+
+        if (!updatedClass) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        res.status(200).json({ message: 'Assignment added successfully', updatedClass });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

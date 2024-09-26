@@ -68,6 +68,31 @@ const teacherSchema = new mongoose.Schema({
   }
 });
 
+// Assignment schema
+const assignmentSchema = new mongoose.Schema({
+  assignmentId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  title: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  dueDate: {
+    type: Date,
+    required: true,
+  },
+  fileUrl: {
+    type: String, // Path to the uploaded file
+    required: true,
+  },
+})
+
 // Class schema
 const classSchema = new mongoose.Schema({
   classId: {
@@ -93,7 +118,8 @@ const classSchema = new mongoose.Schema({
     required: true
   },
   resources: [resourceSchema], // Array of resources
-  students: [studentSchema] // Array of students
+  students: [studentSchema], // Array of students
+  assignments: [assignmentSchema] //Array of assignments
 });
 
 // Exporting the class model
