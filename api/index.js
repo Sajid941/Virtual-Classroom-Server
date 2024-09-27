@@ -6,9 +6,9 @@ require("dotenv").config(); // Load environment variables
 const app = express();
 const port = process.env.PORT || 3000;
 
-const userRoute = require('./Routes/userRoutes');
-const classesRoute = require('./Routes/classesRoutes');
-const developersRoute = require('./Routes/developersRoutes')
+const userRoute = require('../Routes/userRoutes');
+const classesRoute = require('../Routes/classesRoutes');
+const developersRoute = require('../Routes/developersRoutes')
 
 // MongoDB Connection
 mongoose
