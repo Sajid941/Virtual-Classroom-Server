@@ -125,5 +125,28 @@ router.patch('/:classId', upload.single('file'), async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+// Patch students to a class
+router.patch("/:classId/students", async (req, res) => {
+    const { classId } = req.params;
+    const { students } = req.body;
+  
+    try {
+      // Find class by its ID
+      const classData = await Class.findById(classId);
+      if (!classData) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+  
+      // Add new students to the class
+      classData.students = students;
+  
+      // Save the updated class
+      const updatedClass = await classData.save();
+  
+      res.status(200).json(updatedClass);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add students", error });
+    }
+  });
 
 module.exports = router;
