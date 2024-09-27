@@ -9,4 +9,9 @@ router.post("/", async(req,res)=>{
     res.send(result)
 })
 
+router.get("/",async(req,res)=>{
+    const result = await discussions.find()
+    res.send(result)
+})
+
 module.exports = router
