@@ -6,15 +6,15 @@ require("dotenv").config(); // Load environment variables
 const app = express();
 const port = process.env.PORT || 3000;
 
-const userRoute = require('../Routes/userRoutes');
-const classesRoute = require('../Routes/classesRoutes');
-const developersRoute = require('../Routes/developersRoutes')
-const discussionsRoute = require("../Routes/discussionsRoutes")
+const userRoute = require("../Routes/userRoutes");
+const classesRoute = require("../Routes/classesRoutes");
+const developersRoute = require("../Routes/developersRoutes");
+const discussionsRoute = require("../Routes/discussionsRoutes");
 
 // MongoDB Connection
 mongoose
   .connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@virtualclassrommcluster.aq29t.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=VirtualClassrommCluster`,
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@virtualclassrommcluster.aq29t.mongodb.net/ClassNet?retryWrites=true&w=majority&appName=VirtualClassrommCluster`
   )
   .then(() => {
     console.log("MongoDB Connected");
@@ -23,15 +23,21 @@ mongoose
     console.error("MongoDB connection error:", err);
   });
 
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://class-net.vercel.app/"],
+    credentials: true,
+  })
+);
 // Middleware
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 
 // Routes
-app.use('/users', userRoute);
-app.use('/classes', classesRoute);
-app.use("/developers",developersRoute)
-app.use("/discussions",discussionsRoute)
+app.use("/users", userRoute);
+app.use("/classes", classesRoute);
+app.use("/developers", developersRoute);
+app.use("/discussions", discussionsRoute);
 
 // Default Route
 app.get("/", (req, res) => {
