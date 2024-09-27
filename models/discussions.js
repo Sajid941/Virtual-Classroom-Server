@@ -1,17 +1,43 @@
 const mongoose = require('mongoose');
 
-const author = new mongoose.Schema({
+// Define the reply schema
+const replySchema = new mongoose.Schema({
+    replyId: {
+        type: String,
+        required: true
+    },
+    content: {
+        type: String,
+        required: true
+    },
+    author: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        required: true
+    }
+});
+
+// Define the author schema
+const authorSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true
     },
-    authorImage: {
+    profilePic: {
         type: String,
         required: true
     }
-})
+});
 
+// Define the discussion schema
 const discussionSchema = new mongoose.Schema({
+    discussionId: {
+        type: String,
+        required: true
+    },
     title: {
         type: String,
         required: true
@@ -20,16 +46,25 @@ const discussionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    content: {
+        type: String,
+        required: true
+    },
+    author: authorSchema,
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
     category: {
         type: String,
         required: true
     },
-    author: [author],
-    view: {
-        type: Number
+    views: {
+        type: Number,
+        default: 0
     },
+    replies: [replySchema] // Array of replies
+}, { timestamps: true });
 
-},{timestamps:true} )
-
-const discussions = mongoose.model("discussions", discussionSchema)
-module.exports = { discussions }
+const Discussions = mongoose.model("Discussions", discussionSchema);
+module.exports = { Discussions };
