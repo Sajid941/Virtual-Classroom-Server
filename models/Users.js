@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
+    default:"https://i.postimg.cc/CLkQzVS1/user-1.png",
   },
   createdAt: {
     type: Date,

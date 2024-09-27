@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 const userRoute = require('../Routes/userRoutes');
 const classesRoute = require('../Routes/classesRoutes');
 const developersRoute = require('../Routes/developersRoutes')
+const discussionsRoute = require("../Routes/discussionsRoutes")
 
 // MongoDB Connection
 mongoose
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use('/users', userRoute);
 app.use('/classes', classesRoute);
 app.use("/developers",developersRoute)
+app.use("/discussions",discussionsRoute)
 
 // Default Route
 app.get("/", (req, res) => {
