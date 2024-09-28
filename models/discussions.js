@@ -2,25 +2,32 @@ const mongoose = require('mongoose');
 
 // Define the reply schema
 const replySchema = new mongoose.Schema({
-    replyId: {
-        type: String,
-        required: true
-    },
     content: {
         type: String,
         required: true
     },
     author: {
-        type: String,
-        required: true
+        name: {
+            type: String,
+            required: true
+        },
+        profilePic: {
+            type: String,
+            required: true
+        },
+        email: {
+            type: String,
+            required: true // Email added to the reply author
+        }
     },
     createdAt: {
         type: Date,
-        required: true
-    }
+        default: Date.now
+    },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Array of users who liked the reply
 });
 
-// Define the author schema
+// Define the author schema (to be embedded in both discussions and replies)
 const authorSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -29,15 +36,15 @@ const authorSchema = new mongoose.Schema({
     profilePic: {
         type: String,
         required: true
+    },
+    email: {
+        type: String,
+        required: true // Email added to the author
     }
 });
 
 // Define the discussion schema
 const discussionSchema = new mongoose.Schema({
-    discussionId: {
-        type: String,
-        required: true
-    },
     title: {
         type: String,
         required: true
@@ -50,7 +57,10 @@ const discussionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    author: authorSchema,
+    author: {
+        type: authorSchema,
+        required: true // Embedding the author schema for the discussion
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -63,8 +73,10 @@ const discussionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    replies: [replySchema] // Array of replies
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Array of users who liked the discussion
+    replies: [replySchema] // Array of replies (each with its own author schema and likes)
 }, { timestamps: true });
 
 const Discussions = mongoose.model("Discussions", discussionSchema);
+
 module.exports = { Discussions };
