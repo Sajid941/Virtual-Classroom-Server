@@ -3,33 +3,22 @@ const router = express.Router();
 
 const { Discussions } = require("../models/discussions");
 
-// Create a new discussion
 router.post("/", async (req, res) => {
-  try {
-    const newDiscussion = req.body;
-    const createdDiscussion = await Discussions.create(newDiscussion);
-    res.status(201).json(createdDiscussion);
-  } catch (error) {
-    console.error("Error creating discussion:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  const newDiscussion = req.body;
+  const result = await Discussions.create(newDiscussion);
+  res.send(result);
 });
 
-// Get all discussions
 router.get("/", async (req, res) => {
-  try {
-    const discussions = await Discussions.find();
-    res.status(200).json(discussions);
-  } catch (error) {
-    console.error("Error fetching discussions:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  const result = await Discussions.find();
+  res.send(result);
 });
-
-// Get a discussion by slug
+// Route to get a discussion by slug
 router.get("/slug/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
+
+    // Find the discussion by slug
     const discussion = await Discussions.findOne({ slug });
 
     if (!discussion) {
@@ -42,62 +31,64 @@ router.get("/slug/:slug", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-// Update a discussion: views, likes, comments, and likes on comments
+// Route to add a reply to a discussion
+// Route to add a reply to a discussion
 router.patch("/:discussionId", async (req, res) => {
-  const { discussionId } = req.params;
-  const { type, commentId, newComment, userId } = req.body;
+  const { discussionId } = req.params; // Use discussionId from the request parameters
+  const { replyId, content, author, email, profileImage } = req.body; // Expect content and author in the request body
 
   try {
-    const discussion = await Discussions.findById(discussionId);
+    // Make sure to find the discussion using discussionId
+    const discussion = await Discussions.findOneAndUpdate(
+      { discussionId }, // Query using the custom discussionId
+      {
+        $push: {
+          replies: {
+            replyId,
+            content,
+            author,
+            email,
+            profileImage,
+            createdAt: new Date(), // Set the current time for the reply
+          },
+        },
+      },
+      { new: true } // Return the updated discussion
+    );
 
     if (!discussion) {
       return res.status(404).json({ message: "Discussion not found" });
     }
 
-    switch (type) {
-      case "incrementViews":
-        discussion.views += 1;
-        break;
-
-      case "likeDiscussion":
-        if (discussion.likes.includes(userId)) {
-          return res.status(400).json({ message: "You already liked this discussion" });
-        }
-        discussion.likes.push(userId);
-        break;
-
-      case "reply":
-        const newReply = {
-          content: newComment,
-          author: userId,
-          createdAt: new Date(),
-          likes: [], // For storing likes on the comment
-        };
-        discussion.replies.push(newReply);
-        break;
-
-      case "heartComment":
-        const comment = discussion.replies.id(commentId);
-        if (!comment) {
-          return res.status(404).json({ message: "Comment not found" });
-        }
-        if (comment.likes.includes(userId)) {
-          return res.status(400).json({ message: "You already liked this comment" });
-        }
-        comment.likes.push(userId);
-        break;
-
-      default:
-        return res.status(400).json({ message: "Invalid action type" });
-    }
-
-    await discussion.save();
-    res.status(200).json(discussion);
+    res.status(200).json(discussion); // Return the updated discussion
   } catch (error) {
-    console.error("Error updating discussion:", error);
+    console.error("Error adding reply:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+// Increment views
+// Increment views
+router.patch("/:discussionId/incrementViews", async (req, res) => {
+  try {
+    const { discussionId } = req.params;
+
+    // Increment the view count using the custom discussionId
+    const updatedDiscussion = await Discussions.findOneAndUpdate(
+      { discussionId }, // Use your custom field for the query
+      { $inc: { views: 1 } }, // Increment the views field
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedDiscussion) {
+      return res.status(404).json({ message: "Discussion not found" });
+    }
+
+    res.status(200).json(updatedDiscussion); // Respond with the updated discussion
+  } catch (error) {
+    console.error("Error incrementing view count:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 module.exports = router;
