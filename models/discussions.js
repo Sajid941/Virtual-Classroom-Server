@@ -49,10 +49,6 @@ const authorSchema = new mongoose.Schema({
 
 
 const discussionSchema = new mongoose.Schema({
-    discussionId: {
-        type: String,
-        required: true
-    },
     title: {
         type: String,
         required: true

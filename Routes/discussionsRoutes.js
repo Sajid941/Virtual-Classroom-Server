@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { Discussions } = require("../models/discussions");
+const { default: mongoose } = require("mongoose");
 
 router.post("/", async (req, res) => {
   const newDiscussion = req.body;
@@ -40,7 +41,7 @@ router.patch("/:discussionId", async (req, res) => {
   try {
     // Make sure to find the discussion using discussionId
     const discussion = await Discussions.findOneAndUpdate(
-      { discussionId }, // Query using the custom discussionId
+      { _id: new mongoose.Types.ObjectId(discussionId) }, // Query using the custom discussionId
       {
         $push: {
           replies: {
@@ -71,10 +72,9 @@ router.patch("/:discussionId", async (req, res) => {
 router.patch("/:discussionId/incrementViews", async (req, res) => {
   try {
     const { discussionId } = req.params;
-
     // Increment the view count using the custom discussionId
     const updatedDiscussion = await Discussions.findOneAndUpdate(
-      { discussionId }, // Use your custom field for the query
+      { _id:discussionId }, // Use your custom field for the query
       { $inc: { views: 1 } }, // Increment the views field
       { new: true } // Return the updated document
     );
