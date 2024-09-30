@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Define the reply schema
+
 const replySchema = new mongoose.Schema({
     content: {
         type: String,
@@ -17,17 +17,17 @@ const replySchema = new mongoose.Schema({
         },
         email: {
             type: String,
-            required: true // Email added to the reply author
+            required: true 
         }
     },
     createdAt: {
         type: Date,
         default: Date.now
     },
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Array of users who liked the reply
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] 
 });
 
-// Define the author schema (to be embedded in both discussions and replies)
+
 const authorSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -39,11 +39,11 @@ const authorSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true // Email added to the author
+        required: true 
     }
 });
 
-// Define the discussion schema
+
 const discussionSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -59,7 +59,7 @@ const discussionSchema = new mongoose.Schema({
     },
     author: {
         type: authorSchema,
-        required: true // Embedding the author schema for the discussion
+        required: true 
     },
     createdAt: {
         type: Date,
@@ -73,8 +73,8 @@ const discussionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Array of users who liked the discussion
-    replies: [replySchema] // Array of replies (each with its own author schema and likes)
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
+    replies: [replySchema] 
 }, { timestamps: true });
 
 const Discussions = mongoose.model("Discussions", discussionSchema);
