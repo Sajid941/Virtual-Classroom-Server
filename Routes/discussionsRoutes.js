@@ -11,7 +11,19 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const result = await Discussions.find();
+  const category = req.query.category
+  console.log(category);
+  let query = {}
+  if (category) {
+    query = {
+      category: category
+    }
+  }
+  if (category === "All") {
+    query = {}
+  }
+
+  const result = await Discussions.find(query);
   res.send(result);
 });
 // Route to get a discussion by slug
@@ -74,7 +86,7 @@ router.patch("/:discussionId/incrementViews", async (req, res) => {
     const { discussionId } = req.params;
     // Increment the view count using the custom discussionId
     const updatedDiscussion = await Discussions.findOneAndUpdate(
-      { _id:discussionId }, // Use your custom field for the query
+      { _id: discussionId }, // Use your custom field for the query
       { $inc: { views: 1 } }, // Increment the views field
       { new: true } // Return the updated document
     );
