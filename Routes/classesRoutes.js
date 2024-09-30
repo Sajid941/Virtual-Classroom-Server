@@ -40,14 +40,19 @@ router.get("/", async (req, res) => {
 });
 
 // Post class to the database
-router.post("/", async (req, res) => {
+router.post("/",logger,verifyToken, async (req, res) => {
   const newClass = new Class(req.body);
-  try {
-    const savedClass = await newClass.save();
-    res.status(201).json(savedClass);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+  if (req.user.email === req.query.email) {
+    try {
+        const savedClass = await newClass.save();
+        res.status(201).json(savedClass);
+      } catch (err) {
+        res.status(400).json({ message: err.message });
+      }
+  } else {
+    return res.status(403).send({ message: "Forbidden access." });
   }
+  
 });
 
 // Fetch all classes for a specific teacher by email
