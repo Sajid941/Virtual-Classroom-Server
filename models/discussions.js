@@ -61,10 +61,6 @@ const discussionSchema = new mongoose.Schema({
         type: authorSchema,
         required: true 
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
     category: {
         type: String,
         required: true
