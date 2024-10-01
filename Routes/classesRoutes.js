@@ -187,8 +187,8 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   try {
     const classData = await Class.findOneAndUpdate(
       { classId },
-      { meetLink }, // Update only the meetLink field
-      { new: true } // Return the updated class data
+      { $set: { meetLink } }, // Use $set to add or update meetLink
+      { new: true, upsert: true } // Upsert: create document if it doesn't exist
     );
 
     if (!classData) {

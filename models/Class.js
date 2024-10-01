@@ -120,6 +120,7 @@ const classSchema = new mongoose.Schema({
   resources: [resourceSchema], // Array of resources
   students: [studentSchema], // Array of students
   assignments: [assignmentSchema], //Array of assignments
+  meetLink: { type: String, default: null },
   createdAt: {
     type: Date,
     default: Date.now,
