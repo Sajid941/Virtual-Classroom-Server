@@ -10,6 +10,11 @@ router.post("/", async (req, res) => {
   res.send(result);
 });
 
+router.get("/categories", async (req, res) => {
+  const result = await Discussions.distinct("category");
+  res.send(result);
+})
+
 router.get("/", async (req, res) => {
   const category = req.query.category
   console.log(category);
