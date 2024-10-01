@@ -5,6 +5,9 @@ require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
+// Middleware
+const auth = require("../middleware/auth"); // JWT auth middleware
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -44,22 +47,6 @@ const logger = (req, res, next) => {
 };
 
 app.use(logger); // Use logger middleware to log all incoming requests
-
-// Verify Token Middleware
-const verifyToken = (req, res, next) => {
-  const token = req.cookies?.token;
-  if (!token) {
-    return res.status(401).send({ message: "Unauthorized access" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log("Token verification error:", err);
-      return res.status(401).send({ message: "Unauthorized access" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
 
 // JWT Token Creation Route
 app.post("/jwt", async (req, res) => {
@@ -101,9 +88,9 @@ app.get("/logout", async (req, res) => {
 
 // Routes
 app.use("/users", userRoute);
-app.use("/classes", classesRoute);
+app.use("/classes", auth, classesRoute); // Protecting classes routes with auth middleware
 app.use("/developers", developersRoute);
-app.use("/discussions", discussionsRoute);
+app.use("/discussions", auth, discussionsRoute); // Protecting discussions routes with auth middleware
 
 // Default Route
 app.get("/", (req, res) => {
