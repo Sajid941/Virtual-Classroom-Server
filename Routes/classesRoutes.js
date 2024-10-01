@@ -176,5 +176,30 @@ router.patch("/:classId/students", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
+router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
+  const { classId } = req.params;
+  const { meetLink } = req.body; // Expecting only meetLink in the request body
+
+  if (!meetLink) {
+    return res.status(400).json({ message: "meetLink is required" });
+  }
+
+  try {
+    const classData = await Class.findOneAndUpdate(
+      { classId },
+      { meetLink }, // Update only the meetLink field
+      { new: true } // Return the updated class data
+    );
+
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    res.status(200).json(classData);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update meet link", error });
+  }
+});
+
 
 module.exports = router;
