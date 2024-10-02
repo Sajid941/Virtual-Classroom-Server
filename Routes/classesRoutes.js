@@ -98,10 +98,16 @@ router.get("/classid", async (req, res) => {
   }
 });
 
+// It ensure 'assignmentUploads' directory exists
+const uploadDir = path.join(__dirname, "../assignmentUploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Multer setup for file uploads with file type validation
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../assignmentUploads"));
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname);
