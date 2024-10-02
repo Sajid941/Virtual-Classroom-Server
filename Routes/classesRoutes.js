@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
 // Post class to the database (with authentication)
 router.post("/", authMiddleware, async (req, res) => {
   const newClass = new Class(req.body);
-  
+
   // Ensure the logged-in user is the one sending the request
   if (req.user.email === req.body.teacherEmail) {
     try {
@@ -176,6 +176,7 @@ router.patch("/:classId/students", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
+
 router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   const { classId } = req.params;
   const { meetLink } = req.body; // Expecting only meetLink in the request body
@@ -187,8 +188,8 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   try {
     const classData = await Class.findOneAndUpdate(
       { classId },
-      { meetLink }, // Update only the meetLink field
-      { new: true } // Return the updated class data
+      { $set: { meetLink } }, // Use $set to add or update meetLink
+      { new: true, upsert: true } // Upsert: create document if it doesn't exist
     );
 
     if (!classData) {
@@ -201,5 +202,39 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   }
 });
 
+// Get meet link for a class
+
+router.get("/meetlink", authMiddleware, async (req, res) => {
+  const { classId } = req.query; // Extract classId from query parameters
+
+  // Ensure classId is provided
+  if (!classId) {
+    return res.status(400).json({ message: "classId query parameter is required" });
+  }
+
+  try {
+    // Find class by classId
+    const classData = await Class.findOne({ classId });
+
+    // Check if the class was found
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    // Extract meetLink from classData
+    const { meetLink } = classData;
+
+    // Check if meetLink exists
+    if (!meetLink) {
+      return res.status(404).json({ message: "Meet link not found for this class" });
+    }
+
+    // Return only the meetLink
+    res.status(200).json({ meetLink });
+  } catch (error) {
+    // Handle server errors
+    res.status(500).json({ message: "Failed to fetch meet link", error });
+  }
+});
 
 module.exports = router;
