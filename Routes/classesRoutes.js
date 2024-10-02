@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const Class = require("../models/Class");
+const fs = require("fs");
 
 // Middleware for authentication (example, assuming JWT)
 const authMiddleware = require("../middleware/auth"); // Ensure this exists and populates req.user
@@ -235,6 +236,25 @@ router.get("/meetlink", authMiddleware, async (req, res) => {
     // Handle server errors
     res.status(500).json({ message: "Failed to fetch meet link", error });
   }
+});
+
+// Route to download assignment files
+router.get("/download/:filename", async (req, res) => {
+  const { filename } = req.params;
+
+  const filePath = path.join(__dirname, "../assignmentUploads", filename);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error downloading file", err });
+      }
+    });
+  });
 });
 
 module.exports = router;
