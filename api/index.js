@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 // Middleware
 const auth = require("../middleware/auth"); // JWT auth middleware
@@ -76,6 +77,9 @@ app.use("/users", userRoute);
 app.use("/classes", auth, classesRoute); // Protecting classes routes with auth middleware
 app.use("/developers", developersRoute);
 app.use("/discussions", auth, discussionsRoute); // Protecting discussions routes with auth middleware
+
+// Serve static files from assignmentUploads folder
+app.use('/assignmentUploads', express.static(path.join(__dirname, 'assignmentUploads')));
 
 // Default Route
 app.get("/", (req, res) => {
