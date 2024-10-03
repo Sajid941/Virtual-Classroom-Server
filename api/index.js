@@ -73,9 +73,9 @@ app.get("/logout", async (req, res) => {
 
 // Routes
 app.use("/users", userRoute);
-app.use("/classes", auth, classesRoute); // Protecting classes routes with auth middleware
+app.use("/classes", classesRoute); // Protecting classes routes with auth middleware
 app.use("/developers", developersRoute);
-app.use("/discussions", auth, discussionsRoute); // Protecting discussions routes with auth middleware
+app.use("/discussions", discussionsRoute); // Protecting discussions routes with auth middleware
 
 // Default Route
 app.get("/", (req, res) => {
