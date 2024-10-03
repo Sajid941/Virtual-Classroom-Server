@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const path = require('path');
 
 // Middleware
 const auth = require("../middleware/auth"); // JWT auth middleware
@@ -39,15 +38,13 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser());
 
 // Logger middleware (Optional Enhancement)
 const logger = (req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 };
-
-app.use(logger); // Use logger middleware to log all incoming requests
+app.use(logger);
 
 // JWT Token Creation Route
 app.post("/jwt", async (req, res) => {
@@ -57,13 +54,7 @@ app.post("/jwt", async (req, res) => {
       expiresIn: "365d", // 1 year expiration
     });
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      })
-      .send({ success: true });
+    res.status(200).json({ success: true, token });
   } catch (err) {
     console.error("Error in token creation:", err);
     res.status(500).send({ message: "Token creation failed" });
@@ -73,14 +64,8 @@ app.post("/jwt", async (req, res) => {
 // Logout Route
 app.get("/logout", async (req, res) => {
   try {
-    res
-      .clearCookie("token", {
-        maxAge: 0,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      })
-      .send({ success: true });
-    console.log("Logout successful");
+    // No need to clear cookies, just instruct the frontend to remove the token from localStorage
+    res.status(200).send({ success: true });
   } catch (err) {
     console.error("Logout error:", err);
     res.status(500).send(err);
