@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const Class = require("../models/Class");
+const fs = require("fs");
 
 // Middleware for authentication (example, assuming JWT)
 const authMiddleware = require("../middleware/auth"); // Ensure this exists and populates req.user
@@ -20,7 +21,7 @@ router.get("/", async (req, res) => {
 // Post class to the database (with authentication)
 router.post("/", authMiddleware, async (req, res) => {
   const newClass = new Class(req.body);
-  
+
   // Ensure the logged-in user is the one sending the request
   if (req.user.email === req.body.teacherEmail) {
     try {
@@ -97,10 +98,16 @@ router.get("/classid", async (req, res) => {
   }
 });
 
+// It ensure 'assignmentUploads' directory exists
+const uploadDir = path.join(__dirname, "../assignmentUploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Multer setup for file uploads with file type validation
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../assignmentUploads"));
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname);
@@ -176,6 +183,7 @@ router.patch("/:classId/students", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
+
 router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   const { classId } = req.params;
   const { meetLink } = req.body; // Expecting only meetLink in the request body
@@ -187,8 +195,8 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   try {
     const classData = await Class.findOneAndUpdate(
       { classId },
-      { meetLink }, // Update only the meetLink field
-      { new: true } // Return the updated class data
+      { $set: { meetLink } }, // Use $set to add or update meetLink
+      { new: true, upsert: true } // Upsert: create document if it doesn't exist
     );
 
     if (!classData) {
@@ -201,5 +209,58 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
   }
 });
 
+// Get meet link for a class
+
+router.get("/meetlink", authMiddleware, async (req, res) => {
+  const { classId } = req.query; // Extract classId from query parameters
+
+  // Ensure classId is provided
+  if (!classId) {
+    return res.status(400).json({ message: "classId query parameter is required" });
+  }
+
+  try {
+    // Find class by classId
+    const classData = await Class.findOne({ classId });
+
+    // Check if the class was found
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    // Extract meetLink from classData
+    const { meetLink } = classData;
+
+    // Check if meetLink exists
+    if (!meetLink) {
+      return res.status(404).json({ message: "Meet link not found for this class" });
+    }
+
+    // Return only the meetLink
+    res.status(200).json({ meetLink });
+  } catch (error) {
+    // Handle server errors
+    res.status(500).json({ message: "Failed to fetch meet link", error });
+  }
+});
+
+// Route to download assignment files
+router.get("/download/:filename", async (req, res) => {
+  const { filename } = req.params;
+
+  const filePath = path.join(__dirname, "../assignmentUploads", filename);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error downloading file", err });
+      }
+    });
+  });
+});
 
 module.exports = router;

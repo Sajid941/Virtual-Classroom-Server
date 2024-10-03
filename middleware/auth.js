@@ -1,27 +1,27 @@
 const jwt = require("jsonwebtoken");
 
 const auth = (req, res, next) => {
-  // Retrieve the token from the cookies
-  const token = req.cookies?.token;
-
-  // Check if token exists
+  // Extract the token from the Authorization header
+  const token = req.headers["authorization"]?.split(" ")[1]; // Expect a "Bearer <token>" format
+  
+  // Check if the token is provided
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized access, token missing" });
+    return res.status(401).json({ message: "Access denied, no token provided" });
   }
 
-  // Verify the token
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.error("Token verification error:", err);
-      return res.status(401).json({ message: "Unauthorized access, token invalid" });
-    }
-
-    // Attach decoded user information to the request
+  try {
+    // Verify the token using the secret
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    
+    // Attach the decoded user information to the request object
     req.user = decoded;
 
-    // Continue to the next middleware or route
+    // Call the next middleware or route handler
     next();
-  });
+  } catch (err) {
+    // Handle token verification errors
+    res.status(403).json({ message: "Invalid token" });
+  }
 };
 
 module.exports = auth;
