@@ -32,7 +32,7 @@ mongoose
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://class-net.vercel.app"],
+    origin: ["http://localhost:5173","http://localhost:5174", "https://class-net.vercel.app"],
     credentials: true,
   })
 );
