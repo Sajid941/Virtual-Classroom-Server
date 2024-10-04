@@ -5,40 +5,8 @@ const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
 
-// Middleware for authentication
-const authMiddleware = require("../middleware/auth");
-
-// Upload directory
-const uploadDir = process.env.UPLOAD_DIR || '/tmp/assignmentUploads'; // Use /tmp for serverless environments
-
-// Ensure 'assignmentUploads' directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /pdf|doc|docx/; // Allowed file types
-  const isValidExt = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
-  const isValidMime = allowedFileTypes.test(file.mimetype);
-  
-  if (isValidExt && isValidMime) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only PDF and DOC/DOCX files are allowed!"), false);
-  }
-};
-
-const upload = multer({ storage, fileFilter });
+// Middleware for authentication (example, assuming JWT)
+const authMiddleware = require("../middleware/auth"); // Ensure this exists and populates req.user
 
 // Fetch all classes
 router.get("/", async (req, res) => {
@@ -50,47 +18,49 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Post class to the database
+// Post class to the database (with authentication)
 router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
-  // Ensure the logged-in user is the one sending the request
+
   try {
       const savedClass = await newClass.save();
       res.status(201).json(savedClass);
     } catch (err) {
       res.status(400).json({ message: err.message });
     }
-  
 });
 
-// Fetch classes for a specific teacher
+// Fetch all classes for a specific teacher by email
 router.get("/teacher", async (req, res) => {
-  const { email } = req.query;
-
+  const email = req.query.email;
   if (!email) {
     return res.status(400).json({ message: "Email query parameter is required" });
   }
 
     try {
       const classes = await Class.find({ "teacher.email": email });
-      res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this teacher" });
+      if (classes.length === 0) {
+        return res.status(404).json({ message: "No classes found for this teacher" });
+      }
+      res.json(classes);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
-  
 });
 
-// Fetch classes for a specific student
+// Fetch all classes for a specific student by email
 router.get("/student", async (req, res) => {
-  const { email } = req.query;
-
+  const email = req.query.email;
   if (!email) {
     return res.status(400).json({ message: "Email query parameter is required" });
   }
 
     try {
       const classes = await Class.find({ "students.email": email });
-      res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this student" });
+      if (classes.length === 0) {
+        return res.status(404).json({ message: "No classes found for this student" });
+      }
+      res.json(classes);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -98,19 +68,49 @@ router.get("/student", async (req, res) => {
 
 // Fetch class by classId
 router.get("/classid", async (req, res) => {
-  const { id } = req.query;
-
+  const id = req.query.id;
   if (!id) {
     return res.status(400).json({ message: "classId query parameter is required" });
   }
-
   try {
     const classe = await Class.findOne({ classId: id });
-    res.status(classe ? 200 : 404).json(classe || { message: "Class not found" });
+    if (!classe) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+    res.json(classe);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+// It ensure 'assignmentUploads' directory exists
+const uploadDir = path.join(__dirname, "../assignmentUploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer setup for file uploads with file type validation
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const fileTypes = /pdf|doc|docx/; // Adjust file types as necessary
+  const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimeType = fileTypes.test(file.mimetype);
+  if (extName && mimeType) {
+    return cb(null, true);
+  } else {
+    cb(new Error("Only PDF and DOC/DOCX files are allowed!"));
+  }
+};
+
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
@@ -122,22 +122,32 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   }
 
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
-  const newAssignment = { title, description, dueDate, fileUrl };
+
+  const newAssignment = {
+    title,
+    description,
+    dueDate,
+    fileUrl,
+  };
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
-      { classId },
+      { classId: classId },
       { $push: { assignments: newAssignment } },
       { new: true }
     );
 
-    res.status(updatedClass ? 200 : 404).json(updatedClass ? { message: "Assignment added successfully", updatedClass } : { message: "Class not found" });
+    if (!updatedClass) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    res.status(200).json({ message: "Assignment added successfully", updatedClass });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Patch students to a class
+// Patch students to a class (append to existing students list)
 router.patch("/:classId/students", async (req, res) => {
   const { classId } = req.params;
   const { students } = req.body;
@@ -145,51 +155,76 @@ router.patch("/:classId/students", async (req, res) => {
   try {
     const classData = await Class.findOneAndUpdate(
       { classId },
-      { $addToSet: { students: { $each: students } } },
+      { $addToSet: { students: { $each: students } } }, // Ensure no duplicate students
       { new: true }
     );
 
-    res.status(classData ? 200 : 404).json(classData || { message: "Class not found" });
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    res.status(200).json(classData);
   } catch (error) {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
 
-// Patch for updating meet link
 router.patch("/:classId/meetlink", async (req, res) => {
   const { classId } = req.params;
-  const { meetLink } = req.body;
+  const { meetLink } = req.body; // Expecting only meetLink in the request body
 
   if (!meetLink) {
     return res.status(400).json({ message: "meetLink is required" });
   }
 
+  try {
     const classData = await Class.findOneAndUpdate(
       { classId },
-      { $set: { meetLink } },
-      { new: true, upsert: true }
+      { $set: { meetLink } }, // Use $set to add or update meetLink
+      { new: true, upsert: true } // Upsert: create document if it doesn't exist
     );
 
-    res.status(classData ? 200 : 404).json(classData || { message: "Class not found" });
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    res.status(200).json(classData);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update meet link", error });
+  }
 });
 
 // Get meet link for a class
-router.get("/meetlink", async (req, res) => {
-  const { classId } = req.query;
 
+router.get("/meetlink", async (req, res) => {
+  const { classId } = req.query; // Extract classId from query parameters
+
+  // Ensure classId is provided
   if (!classId) {
     return res.status(400).json({ message: "classId query parameter is required" });
   }
 
   try {
+    // Find class by classId
     const classData = await Class.findOne({ classId });
 
-    if (!classData || !classData.meetLink) {
+    // Check if the class was found
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    // Extract meetLink from classData
+    const { meetLink } = classData;
+
+    // Check if meetLink exists
+    if (!meetLink) {
       return res.status(404).json({ message: "Meet link not found for this class" });
     }
 
-    res.status(200).json({ meetLink: classData.meetLink });
+    // Return only the meetLink
+    res.status(200).json({ meetLink });
   } catch (error) {
+    // Handle server errors
     res.status(500).json({ message: "Failed to fetch meet link", error });
   }
 });
@@ -197,7 +232,8 @@ router.get("/meetlink", async (req, res) => {
 // Route to download assignment files
 router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
-  const filePath = path.join(uploadDir, filename);
+
+  const filePath = path.join(__dirname, "../assignmentUploads", filename);
 
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
@@ -211,5 +247,3 @@ router.get("/download/:filename", async (req, res) => {
     });
   });
 });
-
-module.exports = router;
