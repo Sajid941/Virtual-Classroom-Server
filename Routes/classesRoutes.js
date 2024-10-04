@@ -51,7 +51,7 @@ router.get("/", async (req, res) => {
 });
 
 // Post class to the database
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
 
   // Ensure the logged-in user is the one sending the request
