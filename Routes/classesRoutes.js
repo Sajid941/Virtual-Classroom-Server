@@ -63,14 +63,14 @@ router.post("/", async (req, res) => {
   
 });
 
-// Fetch all classes for a specific teacher by email
+// Fetch classes for a specific teacher
 router.get("/teacher", authMiddleware, async (req, res) => {
-  const email = req.query.email;
+  const { email } = req.query;
+
   if (!email) {
     return res.status(400).json({ message: "Email query parameter is required" });
   }
 
-  // Check if the logged-in user is querying their own classes
   if (req.user.email === email) {
     try {
       const classes = await Class.find({ "teacher.email": email });
@@ -79,7 +79,7 @@ router.get("/teacher", authMiddleware, async (req, res) => {
       res.status(500).json({ message: err.message });
     }
   } else {
-    return res.status(403).json({ message: "Forbidden access." });
+    res.status(403).json({ message: "Forbidden access." });
   }
 });
 
