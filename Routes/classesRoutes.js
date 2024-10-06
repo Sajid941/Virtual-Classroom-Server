@@ -118,14 +118,17 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, dueDate } = req.body;
+  const { title, description, marks, dueDate } = req.body;
 
-  if (!title || !description || !dueDate || !req.file) {
+  if (!title || !description || !marks || !dueDate || !req.file) {
     return res.status(400).json({ message: "Missing required fields for the assignment" });
   }
 
+  const marksInt = parseInt(marks);
+
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
-  const newAssignment = { title, description, dueDate, fileUrl };
+  const newAssignment = { title, description, marks: marksInt, dueDate, fileUrl };
+console.log(newAssignment);
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
