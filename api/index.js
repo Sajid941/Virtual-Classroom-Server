@@ -32,7 +32,7 @@ mongoose
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://class-net.vercel.app"],
+    origin: ["http://localhost:5173","http://localhost:5174", "https://class-net.vercel.app"],
     credentials: true,
   })
 );
@@ -73,9 +73,9 @@ app.get("/logout", async (req, res) => {
 
 // Routes
 app.use("/users", userRoute);
-app.use("/classes", auth, classesRoute); // Protecting classes routes with auth middleware
+app.use("/classes", classesRoute); // Protecting classes routes with auth middleware
 app.use("/developers", developersRoute);
-app.use("/discussions", auth, discussionsRoute); // Protecting discussions routes with auth middleware
+app.use("/discussions", discussionsRoute); // Protecting discussions routes with auth middleware
 
 // Default Route
 app.get("/", (req, res) => {
