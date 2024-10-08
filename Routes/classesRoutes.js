@@ -53,18 +53,14 @@ router.get("/", async (req, res) => {
 // Post class to the database
 router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
-
   // Ensure the logged-in user is the one sending the request
-  if (req.user.email === req.body.teacherEmail) {
-    try {
+  try {
       const savedClass = await newClass.save();
       res.status(201).json(savedClass);
     } catch (err) {
       res.status(400).json({ message: err.message });
     }
-  } else {
-    res.status(403).json({ message: "Forbidden access." });
-  }
+  
 });
 
 // Fetch classes for a specific teacher
@@ -88,23 +84,19 @@ router.get("/teacher", authMiddleware, async (req, res) => {
 });
 
 // Fetch classes for a specific student
-router.get("/student", authMiddleware, async (req, res) => {
+router.get("/student", async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
     return res.status(400).json({ message: "Email query parameter is required" });
   }
 
-  if (req.user.email === email) {
     try {
       const classes = await Class.find({ "students.email": email });
       res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this student" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
-  } else {
-    res.status(403).json({ message: "Forbidden access." });
-  }
 });
 
 // Fetch class by classId
@@ -126,14 +118,16 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, dueDate } = req.body;
+  const { title, description, marks, dueDate } = req.body;
 
-  if (!title || !description || !dueDate || !req.file) {
+  if (!title || !description || !marks || !dueDate || !req.file) {
     return res.status(400).json({ message: "Missing required fields for the assignment" });
   }
 
+  const marksInt = parseInt(marks);
+
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
-  const newAssignment = { title, description, dueDate, fileUrl };
+  const newAssignment = { title, description, marks: marksInt, dueDate, fileUrl };
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
@@ -149,7 +143,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
 });
 
 // Patch students to a class
-router.patch("/:classId/students", authMiddleware, async (req, res) => {
+router.patch("/:classId/students", async (req, res) => {
   const { classId } = req.params;
   const { students } = req.body;
 
@@ -167,7 +161,7 @@ router.patch("/:classId/students", authMiddleware, async (req, res) => {
 });
 
 // Patch for updating meet link
-router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
+router.patch("/:classId/meetlink", async (req, res) => {
   const { classId } = req.params;
   const { meetLink } = req.body;
 
@@ -175,7 +169,6 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
     return res.status(400).json({ message: "meetLink is required" });
   }
 
-  try {
     const classData = await Class.findOneAndUpdate(
       { classId },
       { $set: { meetLink } },
@@ -183,13 +176,10 @@ router.patch("/:classId/meetlink", authMiddleware, async (req, res) => {
     );
 
     res.status(classData ? 200 : 404).json(classData || { message: "Class not found" });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to update meet link", error });
-  }
 });
 
 // Get meet link for a class
-router.get("/meetlink", authMiddleware, async (req, res) => {
+router.get("/meetlink", async (req, res) => {
   const { classId } = req.query;
 
   if (!classId) {
