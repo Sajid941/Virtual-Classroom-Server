@@ -64,20 +64,23 @@ router.post("/", async (req, res) => {
 });
 
 // Fetch classes for a specific teacher
-router.get("/teacher", async (req, res) => {
+router.get("/teacher", authMiddleware, async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
     return res.status(400).json({ message: "Email query parameter is required" });
   }
 
+  if (req.user.email === email) {
     try {
       const classes = await Class.find({ "teacher.email": email });
       res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this teacher" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
-  
+  } else {
+    res.status(403).json({ message: "Forbidden access." });
+  }
 });
 
 // Fetch classes for a specific student
@@ -90,7 +93,7 @@ router.get("/student", async (req, res) => {
 
     try {
       const classes = await Class.find({ "students.email": email });
-      res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this student" });
+      res.send(classes);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -115,14 +118,22 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, dueDate } = req.body;
+  const { title, description, marks, dueDate } = req.body;
 
-  if (!title || !description || !dueDate || !req.file) {
+  if (!title || !description || !marks || !dueDate || !req.file) {
     return res.status(400).json({ message: "Missing required fields for the assignment" });
   }
 
+  const marksInt = parseInt(marks);
+
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
-  const newAssignment = { title, description, dueDate, fileUrl };
+
+  const newAssignment = {
+    title,
+    description,
+    dueDate,
+    fileUrl,
+  };
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
