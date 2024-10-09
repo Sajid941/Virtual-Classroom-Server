@@ -68,13 +68,13 @@ router.get("/teacher", authMiddleware, async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
-    return res.status(400).json({ message: "Email query parameter is required" });
+    return res.status(400).json({ message: "Email query parameter is required" });e
   }
 
   if (req.user.email === email) {
     try {
       const classes = await Class.find({ "teacher.email": email });
-      res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this teacher" });
+      res.send(classes);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
