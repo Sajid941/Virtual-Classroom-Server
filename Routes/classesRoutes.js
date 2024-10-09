@@ -93,7 +93,7 @@ router.get("/student", async (req, res) => {
 
     try {
       const classes = await Class.find({ "students.email": email });
-      res.status(classes.length ? 200 : 404).json(classes.length ? classes : { message: "No classes found for this student" });
+      res.send(classes);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
