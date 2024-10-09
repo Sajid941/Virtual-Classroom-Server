@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
+// const path = require('path');
 
 // Middleware
 const auth = require("../middleware/auth"); // JWT auth middleware
@@ -37,6 +38,8 @@ app.use(
   })
 );
 app.use(express.json());
+
+// app.use('/submittedAssignments', express.static(path.join(__dirname, 'submittedAssignments')));
 
 // Logger middleware (Optional Enhancement)
 const logger = (req, res, next) => {
