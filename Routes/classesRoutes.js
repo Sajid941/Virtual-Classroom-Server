@@ -9,14 +9,14 @@ const fs = require("fs");
 const authMiddleware = require("../middleware/auth");
 
 // Upload directory
-const uploadDir = process.env.UPLOAD_DIR || '/tmp/assignmentUploads'; // Use /tmp for serverless environments
+const uploadDir = process.env.UPLOAD_DIR || "/tmp/assignmentUploads"; // Use /tmp for serverless environments
 
 // Ensure 'assignmentUploads' directory exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer setup for file uploads
+// Multer setup for teachers assignment uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -28,9 +28,11 @@ const storage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
   const allowedFileTypes = /pdf|doc|docx/; // Allowed file types
-  const isValidExt = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
+  const isValidExt = allowedFileTypes.test(
+    path.extname(file.originalname).toLowerCase()
+  );
   const isValidMime = allowedFileTypes.test(file.mimetype);
-  
+
   if (isValidExt && isValidMime) {
     cb(null, true);
   } else {
@@ -55,12 +57,11 @@ router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
   // Ensure the logged-in user is the one sending the request
   try {
-      const savedClass = await newClass.save();
-      res.status(201).json(savedClass);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
-  
+    const savedClass = await newClass.save();
+    res.status(201).json(savedClass);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
 // Fetch classes for a specific teacher
@@ -88,7 +89,9 @@ router.get("/student", async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
-    return res.status(400).json({ message: "Email query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
   }
 
     try {
@@ -104,12 +107,16 @@ router.get("/classid", async (req, res) => {
   const { id } = req.query;
 
   if (!id) {
-    return res.status(400).json({ message: "classId query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "classId query parameter is required" });
   }
 
   try {
     const classe = await Class.findOne({ classId: id });
-    res.status(classe ? 200 : 404).json(classe || { message: "Class not found" });
+    res
+      .status(classe ? 200 : 404)
+      .json(classe || { message: "Class not found" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -121,7 +128,9 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { title, description, marks, dueDate } = req.body;
 
   if (!title || !description || !marks || !dueDate || !req.file) {
-    return res.status(400).json({ message: "Missing required fields for the assignment" });
+    return res
+      .status(400)
+      .json({ message: "Missing required fields for the assignment" });
   }
 
   const marksInt = parseInt(marks);
@@ -131,6 +140,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   const newAssignment = {
     title,
     description,
+    marks: marksInt,
     dueDate,
     fileUrl,
   };
@@ -142,7 +152,13 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
       { new: true }
     );
 
-    res.status(updatedClass ? 200 : 404).json(updatedClass ? { message: "Assignment added successfully", updatedClass } : { message: "Class not found" });
+    res
+      .status(updatedClass ? 200 : 404)
+      .json(
+        updatedClass
+          ? { message: "Assignment added successfully", updatedClass }
+          : { message: "Class not found" }
+      );
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -160,7 +176,9 @@ router.patch("/:classId/students", async (req, res) => {
       { new: true }
     );
 
-    res.status(classData ? 200 : 404).json(classData || { message: "Class not found" });
+    res
+      .status(classData ? 200 : 404)
+      .json(classData || { message: "Class not found" });
   } catch (error) {
     res.status(500).json({ message: "Failed to add students", error });
   }
@@ -175,13 +193,15 @@ router.patch("/:classId/meetlink", async (req, res) => {
     return res.status(400).json({ message: "meetLink is required" });
   }
 
-    const classData = await Class.findOneAndUpdate(
-      { classId },
-      { $set: { meetLink } },
-      { new: true, upsert: true }
-    );
+  const classData = await Class.findOneAndUpdate(
+    { classId },
+    { $set: { meetLink } },
+    { new: true, upsert: true }
+  );
 
-    res.status(classData ? 200 : 404).json(classData || { message: "Class not found" });
+  res
+    .status(classData ? 200 : 404)
+    .json(classData || { message: "Class not found" });
 });
 
 // Get meet link for a class
@@ -189,14 +209,18 @@ router.get("/meetlink", async (req, res) => {
   const { classId } = req.query;
 
   if (!classId) {
-    return res.status(400).json({ message: "classId query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "classId query parameter is required" });
   }
 
   try {
     const classData = await Class.findOne({ classId });
 
     if (!classData || !classData.meetLink) {
-      return res.status(404).json({ message: "Meet link not found for this class" });
+      return res
+        .status(404)
+        .json({ message: "Meet link not found for this class" });
     }
 
     res.status(200).json({ meetLink: classData.meetLink });
@@ -223,4 +247,67 @@ router.get("/download/:filename", async (req, res) => {
   });
 });
 
+// multer storage for submitted assignment
+const submitDir = path.join(__dirname, '../submittedAssignments');
+
+// Ensure 'submittedAssignments' directory exists
+if (!fs.existsSync(submitDir)) {
+  fs.mkdirSync(submitDir, { recursive: true });
+}
+
+// Multer setup for student assignment submit
+const submitAssignmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, submitDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const submit = multer({ storage: submitAssignmentStorage });
+// route to submit assignment of students
+router.patch(
+  "/:classId/assignments/:assignmentId/submissions", submit.single('submit_file'),
+  async (req, res) => {
+    const { classId, assignmentId } = req.params;
+    const { assignment_name, student_name, student_email } =
+      req.body;
+
+    if (!assignment_name || !student_name || !student_email || !req.file) {
+      return res
+        .status(400)
+        .json({ message: "Missing input data for submission" });
+    }
+
+    const fileUrl = `/submittedAssignments/${req.file.filename}`;
+
+    const newAssignmentSubmission = {
+      assignment_name,
+      student_name,
+      student_email,
+      submit_file: fileUrl,
+      submitAt: new Date(),
+    };
+
+    try {
+      const updatedClass = await Class.findOneAndUpdate(
+        {
+          classId: classId,
+          "assignments._id": assignmentId,
+        },
+        { $push: { "assignments.$.assignmentSubmissions": newAssignmentSubmission } },
+        { new: true }
+      );
+
+      if (!updatedClass) {
+        return res.status(404).json({ message: 'Class or Assignment not found' });
+      }
+  
+      res.status(200).json({ message: 'Submitted successfully', updatedClass });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
 module.exports = router;
