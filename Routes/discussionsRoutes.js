@@ -18,14 +18,16 @@ router.get("/categories", async (req, res) => {
 router.get("/", async (req, res) => {
   const category = req.query.category
   const search = req.query.search
-  console.log(search);
-  console.log(category);
+  const sort = req.query.sort
+
   let query = {}
+
   if (category) {
     query = {
       category: category
     }
   }
+
   if (search) {
     query = {
       $or: [
@@ -33,15 +35,31 @@ router.get("/", async (req, res) => {
       ]
     }
   }
+
   if (category === "All" && !search) {
     query = {}
   }
 
+  const sortCriteria = {}
 
+  if (sort === "newest") {
+    sortCriteria.createdAt = -1
+  }
+  else if (sort === "oldest") {
+    sortCriteria.createdAt = 1
+  }
+  else if (sort === "asc") {
+    sortCriteria.title = 1
+  }
+  else if (sort === "desc") {
+    sortCriteria.title = -1
+  }
 
-  const result = await Discussions.find(query);
+  const result = await Discussions.find(query).sort(sortCriteria);
+
   res.send(result);
 });
+
 // Route to get a discussion by slug
 router.get("/slug/:slug", async (req, res) => {
   try {
