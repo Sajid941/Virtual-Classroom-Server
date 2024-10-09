@@ -35,11 +35,11 @@ const replySchema = new mongoose.Schema({
 const authorSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        default:"Unknown"
     },
     profilePic: {
         type: String,
-        required: true
+        default:"https://i.postimg.cc/CLkQzVS1/user-1.png"
     },
     email: {
         type: String,
