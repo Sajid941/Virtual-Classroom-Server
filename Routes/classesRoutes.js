@@ -154,6 +154,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   const newAssignment = {
     title,
     description,
+    marks: marksInt,
     dueDate,
     fileUrl,
   };
@@ -260,28 +261,50 @@ router.get("/download/:filename", async (req, res) => {
   });
 });
 
+// multer storage for submitted assignment
+const submitDir = "../submittedAssignments";
 
+// Ensure 'submittedAssignments' directory exists
+if (!fs.existsSync(submitDir)) {
+  fs.mkdirSync(submitDir, { recursive: true });
+}
+
+// Multer setup for student assignment submit
+const submitAssignmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, submitDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const submit = multer({ storage: submitAssignmentStorage });
 // route to submit assignment of students
 router.patch(
-  "/:classId/assignments/:assignmentId/submissions",
+  "/:classId/assignments/:assignmentId/submissions", submit.single('submit_file'),
   async (req, res) => {
     const { classId, assignmentId } = req.params;
-    const { assignment_name, student_name, student_email, submit_file } =
+    const { assignment_name, student_name, student_email } =
       req.body;
 
-    if (!assignment_name || !student_name || !student_email || !submit_file) {
+    if (!assignment_name || !student_name || !student_email || !req.file) {
       return res
         .status(400)
         .json({ message: "Missing input data for submission" });
     }
 
+    const fileUrl = `/submittedAssignments/${req.file.filename}`;
+console.log(fileUrl);
+
     const newAssignmentSubmission = {
       assignment_name,
       student_name,
       student_email,
-      submit_file,
+      fileUrl,
       submitAt: new Date(),
     };
+console.log(newAssignmentSubmission);
 
     try {
       const updatedClass = await Class.findOneAndUpdate(
@@ -289,7 +312,7 @@ router.patch(
           classId: classId,
           "assignments._id": assignmentId,
         },
-        { $push: { "assignments.$.submissions": newAssignmentSubmission } },
+        { $push: { "assignments.$.assignmentSubmissions": newAssignmentSubmission } },
         { new: true }
       );
 

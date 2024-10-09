@@ -68,6 +68,30 @@ const teacherSchema = new mongoose.Schema({
   }
 });
 
+// Submitted assignment schema
+const assignmentSubmissions = new mongoose.Schema({
+  assignment_name: {
+    type: String,
+    required: true,
+  },
+  student_name: {
+    type: String,
+    required: true,
+  },
+  student_email: {
+    type: String,
+    required: true,
+  },
+  submit_file:{
+    type: String,
+    required: true,
+  },
+  submitAt:{
+    type: Date,
+    required: true,
+  },
+})
+
 // Assignment schema
 const assignmentSchema = new mongoose.Schema({
   assignmentId: {
@@ -95,6 +119,7 @@ const assignmentSchema = new mongoose.Schema({
     type: String, // Path to the uploaded file
     required: true,
   },
+  assignmentSubmissions: [assignmentSubmissions] // array of assignment submitted students
 })
 
 // Class schema
