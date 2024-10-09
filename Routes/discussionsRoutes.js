@@ -17,6 +17,8 @@ router.get("/categories", async (req, res) => {
 
 router.get("/", async (req, res) => {
   const category = req.query.category
+  const search = req.query.search
+  console.log(search);
   console.log(category);
   let query = {}
   if (category) {
@@ -24,9 +26,18 @@ router.get("/", async (req, res) => {
       category: category
     }
   }
-  if (category === "All") {
+  if (search) {
+    query = {
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+      ]
+    }
+  }
+  if (category === "All" && !search) {
     query = {}
   }
+
+
 
   const result = await Discussions.find(query);
   res.send(result);
