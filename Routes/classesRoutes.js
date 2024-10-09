@@ -127,7 +127,13 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   const marksInt = parseInt(marks);
 
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
-  const newAssignment = { title, description, marks: marksInt, dueDate, fileUrl };
+
+  const newAssignment = {
+    title,
+    description,
+    dueDate,
+    fileUrl,
+  };
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
