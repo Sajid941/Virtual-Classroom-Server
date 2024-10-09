@@ -4,6 +4,50 @@ const multer = require("multer");
 const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
+const nodemailer = require('nodemailer');
+
+// Nodemailer transporter setup for Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'rkshawn975@gmail.com', // Your Gmail address
+    pass: process.env.NODE_MAILER_PASS, // Your App password or regular password if less secure apps are enabled
+  },
+});
+
+// Function to send email notification
+const sendEmailNotification = async (teacherName,teacherEmail, className,classid) => {
+  const mailOptions = {
+    from: 'rkshawn975@gmail.com', // Sender's email address
+    to: 'rkshawnso@gmail.com', // Recipient's email (the teacher's email)
+    subject: `Class Created Successfully: ${className}`, // Subject of the email
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="text-align: center; color: #4CAF50;">Class Created Successfully!</h2>
+        <p>Dear <strong>${teacherName}</strong>,</p>
+        <p>We are excited to inform you that your class "<strong>${className}</strong>" has been successfully created.</p>
+        <p><strong>Class Code:</strong> <span style="background-color: #f5f5f5; padding: 5px 10px; border-radius: 4px;">${classid}</span></p>
+        <p>Here are the details:</p>
+        <ul>
+          <li><strong>Class Name:</strong> ${className}</li>
+          <li><strong>Class ID:</strong> ${classid}</li>
+        </ul>
+        <p>We wish you all the best in your teaching journey!</p>
+        <hr style="border: none; border-top: 1px solid #ddd;">
+        <p style="font-size: 12px; color: #777;">If you have any questions, feel free to contact us at <a href="mailto:support@classnet.com" style="color: #4CAF50;">support@classnet.com</a>.</p>
+        <p style="font-size: 12px; color: #777;">Thank you for using ClassNet!</p>
+      </div>
+    `,
+  };
+  
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+};
 
 // Middleware for authentication
 const authMiddleware = require("../middleware/auth");
@@ -53,10 +97,19 @@ router.get("/", async (req, res) => {
 // Post class to the database
 router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
+  //get teachers email, subject and class code
+  const teacherName = req.body.teacher.name;
+  const teacherEmail =req.body.teacher.email;
+  const classId =req.body.classId;
+  const subject =req.body.subject;
+  console.log(newClass)
   // Ensure the logged-in user is the one sending the request
   try {
       const savedClass = await newClass.save();
       res.status(201).json(savedClass);
+
+      //send email notification to teachers with nodemailer
+      sendEmailNotification(teacherName,teacherEmail, subject,classId);
     } catch (err) {
       res.status(400).json({ message: err.message });
     }
