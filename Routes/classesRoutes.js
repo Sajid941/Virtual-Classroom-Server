@@ -262,7 +262,7 @@ router.get("/download/:filename", async (req, res) => {
 });
 
 // multer storage for submitted assignment
-const submitDir = "../submittedAssignments";
+const submitDir = path.join(__dirname, '../submittedAssignments');
 
 // Ensure 'submittedAssignments' directory exists
 if (!fs.existsSync(submitDir)) {
@@ -301,7 +301,7 @@ console.log(fileUrl);
       assignment_name,
       student_name,
       student_email,
-      fileUrl,
+      submit_file: fileUrl,
       submitAt: new Date(),
     };
 console.log(newAssignmentSubmission);
