@@ -295,7 +295,6 @@ router.patch(
     }
 
     const fileUrl = `/submittedAssignments/${req.file.filename}`;
-console.log(fileUrl);
 
     const newAssignmentSubmission = {
       assignment_name,
@@ -304,7 +303,6 @@ console.log(fileUrl);
       submit_file: fileUrl,
       submitAt: new Date(),
     };
-console.log(newAssignmentSubmission);
 
     try {
       const updatedClass = await Class.findOneAndUpdate(
