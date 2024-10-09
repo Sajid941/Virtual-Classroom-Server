@@ -33,7 +33,7 @@ router.post("/login", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const payload = { email : email };
+    const payload = { email: email };
 
     // Sign token with 1-day expiration
     const token = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
@@ -81,7 +81,6 @@ router.get("/email", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    console.log(user);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -91,6 +90,29 @@ router.get("/email", async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching user", error: err.message });
+  }
+});
+
+// Add new user (POST /users)
+router.post("/", async (req, res) => {
+  const { email, name ,role, profileImage } = req.body;
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists." });
+    }
+
+    // Create and save the new user
+    const newUser = new User({ email, name ,role, profileImage });
+    await newUser.save();
+
+    res.status(201).json({ message: "User created successfully." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error creating user", error: error.message });
   }
 });
 
