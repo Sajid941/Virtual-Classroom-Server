@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'rkshawn975@gmail.com', // Your Gmail address
-    pass: process.env.NODE_MAILER_PASS, // Your App password or regular password if less secure apps are enabled
+    pass: process.env.NODE_MAILER_PASS // Your App password or regular password if less secure apps are enabled
   },
 });
 
@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 const sendEmailNotification = async (teacherName,teacherEmail, className,classid) => {
   const mailOptions = {
     from: 'rkshawn975@gmail.com', // Sender's email address
-    to: 'rkshawnso@gmail.com', // Recipient's email (the teacher's email)
+    to: teacherEmail, // Recipient's email (the teacher's email)
     subject: `Class Created Successfully: ${className}`, // Subject of the email
     html: `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
@@ -48,6 +48,8 @@ const sendEmailNotification = async (teacherName,teacherEmail, className,classid
     console.error("Error sending email:", error);
   }
 };
+
+
 
 // Middleware for authentication
 const authMiddleware = require("../middleware/auth");
@@ -104,11 +106,14 @@ router.post("/", async (req, res) => {
   const teacherEmail =req.body.teacher.email;
   const classId =req.body.classId;
   const subject =req.body.subject;
-  console.log(newClass)
+  
   // Ensure the logged-in user is the one sending the request
   try {
     const savedClass = await newClass.save();
     res.status(201).json(savedClass);
+
+    //send email email notifications to teachers account
+    sendEmailNotification(teacherName,teacherEmail,subject,classId);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
