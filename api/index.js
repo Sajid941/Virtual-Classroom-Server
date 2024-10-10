@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
+// const path = require('path');
 
 // Middleware
 const auth = require("../middleware/auth"); // JWT auth middleware
@@ -38,27 +39,29 @@ app.use(
 );
 app.use(express.json());
 
+// app.use('/submittedAssignments', express.static(path.join(__dirname, 'submittedAssignments')));
+
 // Logger middleware (Optional Enhancement)
-const logger = (req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-};
-app.use(logger);
+// const logger = (req, res, next) => {
+//   console.log(`${req.method} ${req.path}`);
+//   next();
+// };
+// app.use(logger);
 
 // JWT Token Creation Route
-app.post("/jwt", async (req, res) => {
-  try {
-    const user = req.body;
-    const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-      expiresIn: "365d", // 1 year expiration
-    });
+// app.post("/jwt", async (req, res) => {
+//   try {
+//     const user = req.body;
+//     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+//       expiresIn: "365d", // 1 year expiration
+//     });
 
-    res.status(200).json({ success: true, token });
-  } catch (err) {
-    console.error("Error in token creation:", err);
-    res.status(500).send({ message: "Token creation failed" });
-  }
-});
+//     res.status(200).json({ success: true, token });
+//   } catch (err) {
+//     console.error("Error in token creation:", err);
+//     res.status(500).send({ message: "Token creation failed" });
+//   }
+// });
 
 // Logout Route
 app.get("/logout", async (req, res) => {
