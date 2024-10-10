@@ -4,21 +4,26 @@ const multer = require("multer");
 const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 // Nodemailer transporter setup for Gmail
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
-    user: 'rkshawn975@gmail.com', // Your Gmail address
-    pass: process.env.NODE_MAILER_PASS // Your App password or regular password if less secure apps are enabled
+    user: "rkshawn975@gmail.com", // Your Gmail address
+    pass: process.env.NODE_MAILER_PASS, // Your App password or regular password if less secure apps are enabled
   },
 });
 
 // Function to send email notification
-const sendEmailNotification = async (teacherName,teacherEmail, className,classid) => {
+const sendEmailNotification = async (
+  teacherName,
+  teacherEmail,
+  className,
+  classid
+) => {
   const mailOptions = {
-    from: 'rkshawn975@gmail.com', // Sender's email address
+    from: "rkshawn975@gmail.com", // Sender's email address
     to: teacherEmail, // Recipient's email (the teacher's email)
     subject: `Class Created Successfully: ${className}`, // Subject of the email
     html: `
@@ -39,7 +44,6 @@ const sendEmailNotification = async (teacherName,teacherEmail, className,classid
       </div>
     `,
   };
-  
 
   try {
     await transporter.sendMail(mailOptions);
@@ -48,8 +52,6 @@ const sendEmailNotification = async (teacherName,teacherEmail, className,classid
     console.error("Error sending email:", error);
   }
 };
-
-
 
 // Middleware for authentication
 const authMiddleware = require("../middleware/auth");
@@ -103,17 +105,17 @@ router.post("/", async (req, res) => {
   const newClass = new Class(req.body);
   //get teachers email, subject and class code
   const teacherName = req.body.teacher.name;
-  const teacherEmail =req.body.teacher.email;
-  const classId =req.body.classId;
-  const subject =req.body.subject;
-  
+  const teacherEmail = req.body.teacher.email;
+  const classId = req.body.classId;
+  const subject = req.body.subject;
+
   // Ensure the logged-in user is the one sending the request
   try {
     const savedClass = await newClass.save();
     res.status(201).json(savedClass);
 
     //send email email notifications to teachers account
-    sendEmailNotification(teacherName,teacherEmail,subject,classId);
+    sendEmailNotification(teacherName, teacherEmail, subject, classId);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -124,16 +126,19 @@ router.get("/teacher", async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
-    return res.status(400).json({ message: "Email query parameter is required" });e
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
+    e;
   }
 
   // if (req.user.email === email) {
-    try {
-      const classes = await Class.find({ "teacher.email": email });
-      res.send(classes);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+  try {
+    const classes = await Class.find({ "teacher.email": email });
+    res.send(classes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
   // } else {
   //   res.status(403).json({ message: "Forbidden access." });
   // }
@@ -149,12 +154,12 @@ router.get("/student", async (req, res) => {
       .json({ message: "Email query parameter is required" });
   }
 
-    try {
-      const classes = await Class.find({ "students.email": email });
-      res.send(classes);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+  try {
+    const classes = await Class.find({ "students.email": email });
+    res.send(classes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // Fetch class by classId
@@ -238,6 +243,66 @@ router.patch("/:classId/students", async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
+router.patch("/:classId/quiz", async (req, res) => {
+  const { classId } = req.params;
+  const { quiz } = req.body; // Assuming quiz is an object or an array of quiz objects
+  try {
+    const classData = await Class.findOneAndUpdate(
+      { classId },
+      {
+        $addToSet: { quizzes: { $each: Array.isArray(quiz) ? quiz : [quiz] } },
+      },
+      { new: true, upsert: true } // Enable upsert
+    );
+    console.log(classData);
+    res
+      .status(classData ? 200 : 404)
+      .json(classData || { message: "Class not found" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add quiz", error });
+  }
+});
+router.patch("/:classId/quizsubmission", async (req, res) => {
+  const { classId } = req.params; // The class we are targeting
+  const { submissionData } = req.body; // submissionData contains student's submission
+
+  try {
+    // Step 1: Find the class by classId
+    const classData = await Class.findOne({ classId });
+
+    // Step 2: Check if the class exists
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    // Step 3: Check if there is at least one quiz in the quizzes array
+    if (classData.quizzes.length === 0) {
+      return res.status(404).json({ message: "No quizzes found in this class" });
+    }
+
+    // Step 4: Target the first quiz in the quizzes array
+    const quiz = classData.quizzes[0];
+
+    // Step 5: If the quiz doesn't have a submissions field, initialize it as an empty array
+    if (!quiz.submissions) {
+      quiz.submissions = [];
+    }
+
+    // Step 6: Push the submissionData (student's quiz submission) into the submissions array
+    quiz.submissions.push(submissionData);
+
+    // Step 7: Save the updated class data
+    await classData.save();
+
+    // Step 8: Return the updated class data with success response
+    res.status(200).json(classData);
+  } catch (error) {
+    console.error("Error updating quiz submissions:", error);
+    res.status(500).json({ message: "Failed to update quiz submissions", error });
+  }
+});
+
+
 
 // Patch for updating meet link
 router.patch("/:classId/meetlink", async (req, res) => {
@@ -324,11 +389,11 @@ const submitAssignmentStorage = multer.diskStorage({
 const submit = multer({ storage: submitAssignmentStorage });
 // route to submit assignment of students
 router.patch(
-  "/:classId/assignments/:assignmentId/submissions", submit.single('submit_file'),
+  "/:classId/assignments/:assignmentId/submissions",
+  submit.single("submit_file"),
   async (req, res) => {
     const { classId, assignmentId } = req.params;
-    const { assignment_name, student_name, student_email } =
-      req.body;
+    const { assignment_name, student_name, student_email } = req.body;
 
     if (!assignment_name || !student_name || !student_email || !req.file) {
       return res
@@ -352,15 +417,21 @@ router.patch(
           classId: classId,
           "assignments._id": assignmentId,
         },
-        { $push: { "assignments.$.assignmentSubmissions": newAssignmentSubmission } },
+        {
+          $push: {
+            "assignments.$.assignmentSubmissions": newAssignmentSubmission,
+          },
+        },
         { new: true }
       );
 
       if (!updatedClass) {
-        return res.status(404).json({ message: 'Class or Assignment not found' });
+        return res
+          .status(404)
+          .json({ message: "Class or Assignment not found" });
       }
-  
-      res.status(200).json({ message: 'Submitted successfully', updatedClass });
+
+      res.status(200).json({ message: "Submitted successfully", updatedClass });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
