@@ -1,9 +1,12 @@
 const express = require("express");
+const { createServer } = require('node:http');
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config(); // Load environment variables
 const jwt = require("jsonwebtoken");
 // const path = require('path');
+const { Server } = require('socket.io');
+const {Chat} = require('../models/chat');
 
 // Middleware
 const auth = require("../middleware/auth"); // JWT auth middleware
@@ -16,6 +19,16 @@ const userRoute = require("../Routes/userRoutes");
 const classesRoute = require("../Routes/classesRoutes");
 const developersRoute = require("../Routes/developersRoutes");
 const discussionsRoute = require("../Routes/discussionsRoutes");
+const chatRoute = require("../Routes/chatRoutes");
+
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://class-net.vercel.app"],
+    credentials: true,
+    methods: ["GET", "POST"],
+  }
+})
 
 // MongoDB Connection
 mongoose
@@ -33,11 +46,37 @@ mongoose
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173","http://localhost:5174", "https://class-net.vercel.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://class-net.vercel.app"],
     credentials: true,
   })
 );
 app.use(express.json());
+
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
+  socket.on("joinClassroom", async (classroomId) => {
+    socket.join(classroomId);
+    console.log(`User joined classroom: ${classroomId}`);
+
+    const chat = await Chat.findOne({ classroomId });
+    if(chat) {
+      socket.emit("chatHistory", chat.message);
+    }
+  });
+
+
+
+  socket.on("sendMessage", (messageData) => {
+    const { classroomId, message } = messageData;
+    io.to(classroomId).emit("receiveMessage", message);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
+});
+
 
 // app.use('/submittedAssignments', express.static(path.join(__dirname, 'submittedAssignments')));
 
@@ -79,6 +118,7 @@ app.use("/users", userRoute);
 app.use("/classes", classesRoute); // Protecting classes routes with auth middleware
 app.use("/developers", developersRoute);
 app.use("/discussions", discussionsRoute); // Protecting discussions routes with auth middleware
+app.use("/chats", chatRoute);
 
 // Default Route
 app.get("/", (req, res) => {
@@ -92,6 +132,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start the Server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
