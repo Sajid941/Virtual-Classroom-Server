@@ -437,4 +437,22 @@ router.patch(
     }
   }
 );
+
+// Route to download submitted assignment files
+router.get("/submitted-file-download/:filename", async (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(submitDir, filename);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error downloading file", err });
+      }
+    });
+  });
+});
 module.exports = router;
