@@ -455,4 +455,41 @@ router.get("/submitted-file-download/:filename", async (req, res) => {
     });
   });
 });
+
+// Route to get all assignment submissions of classes based on user role
+router.get('/user-submissions', async (req, res) => {
+  try {
+    const { email, role } = req.query;
+
+    // Query based on role
+    const filter = role === 'teacher'
+      ? { 'teacher.email': email }
+      : { 'students.email': email };
+      
+    // Find all relevant classes
+    const userClasses = await Class.find(filter);
+
+    if (!userClasses.length) {
+      return res.status(404).json({ message: 'No classes found for this user.' });
+    }
+
+    // Aggregate all submissions from the fetched classes
+    const submissions = userClasses.flatMap(cls =>
+      cls.assignments.flatMap(assignment =>
+        assignment.assignmentSubmissions.map(submission => ({
+          className: cls.className,
+          assignmentName: assignment.title,
+          ...submission._doc, // Include submission data
+        }))
+      )
+    );
+
+    res.status(200).json({ submissions });
+
+  } catch (error) {
+    console.error('Error fetching user submissions:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
