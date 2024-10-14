@@ -277,7 +277,9 @@ router.patch("/:classId/quizsubmission", async (req, res) => {
 
     // Step 3: Check if there is at least one quiz in the quizzes array
     if (classData.quizzes.length === 0) {
-      return res.status(404).json({ message: "No quizzes found in this class" });
+      return res
+        .status(404)
+        .json({ message: "No quizzes found in this class" });
     }
 
     // Step 4: Target the first quiz in the quizzes array
@@ -298,11 +300,11 @@ router.patch("/:classId/quizsubmission", async (req, res) => {
     res.status(200).json(classData);
   } catch (error) {
     console.error("Error updating quiz submissions:", error);
-    res.status(500).json({ message: "Failed to update quiz submissions", error });
+    res
+      .status(500)
+      .json({ message: "Failed to update quiz submissions", error });
   }
 });
-
-
 
 // Patch for updating meet link
 router.patch("/:classId/meetlink", async (req, res) => {
@@ -457,38 +459,57 @@ router.get("/submitted-file-download/:filename", async (req, res) => {
 });
 
 // Route to get all assignment submissions of classes based on user role
-router.get('/user-submissions', async (req, res) => {
+router.get("/user-submissions", async (req, res) => {
   try {
-    const { email, role } = req.query;
+    const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    const filter = role === 'teacher'
-      ? { 'teacher.email': email }
-      : { 'students.email': email };
-      
-    // Find all relevant classes
-    const userClasses = await Class.find(filter);
+    let query = role === "teacher"
+        ? { "teacher.email": email }
+        : { "students.email": email };
 
-    if (!userClasses.length) {
-      return res.status(404).json({ message: 'No classes found for this user.' });
+    // Only apply filters if valid values are provided
+    if (className && className !== "Select Class") {
+      query["className"] = { $regex: className, $options: "i" };
+    }
+    if (assignmentName && assignmentName !== "Select Assignment") {
+      query["assignments.title"] = { $regex: assignmentName, $options: "i" };
+    }
+    if (search) {
+      query.$or = [
+        { "assignments.title": { $regex: search, $options: "i" } },
+        {
+          "assignments.assignmentSubmissions.student_name": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
     }
 
-    // Aggregate all submissions from the fetched classes
-    const submissions = userClasses.flatMap(cls =>
-      cls.assignments.flatMap(assignment =>
-        assignment.assignmentSubmissions.map(submission => ({
+    const userClasses = await Class.find(query);
+
+    if (!userClasses.length) {
+      return res
+        .status(404)
+        .json({ message: "No classes found for this user." });
+    }
+
+    // Aggregate all submissions from the classes
+    const submissions = userClasses.flatMap((cls) =>
+      cls.assignments.flatMap((assignment) =>
+        assignment.assignmentSubmissions.map((submission) => ({
           className: cls.className,
           assignmentName: assignment.title,
-          ...submission._doc, // Include submission data
+          ...submission._doc,
         }))
       )
     );
 
     res.status(200).json({ submissions });
-
   } catch (error) {
-    console.error('Error fetching user submissions:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching user submissions:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
