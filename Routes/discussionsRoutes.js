@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const verifyToken = require("../middleware/verifyToken")
 
 const { Discussions } = require("../models/discussions");
 const { default: mongoose } = require("mongoose");
@@ -15,7 +16,7 @@ router.get("/categories", async (req, res) => {
   res.send(result);
 })
 
-router.get("/", async (req, res) => {
+router.get("/",  async (req, res) => {
   const category = req.query.category
   const search = req.query.search
   const sort = req.query.sort

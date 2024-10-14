@@ -54,7 +54,6 @@ const sendEmailNotification = async (
 };
 
 // Middleware for authentication
-const authMiddleware = require("../middleware/auth");
 
 // Upload directory
 const uploadDir = process.env.UPLOAD_DIR || "/tmp/assignmentUploads"; // Use /tmp for serverless environments
