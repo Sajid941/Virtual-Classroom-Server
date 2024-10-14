@@ -90,7 +90,7 @@ const assignmentSubmissions = new mongoose.Schema({
     type: Date,
     required: true,
   },
-})
+});
 
 // Assignment schema
 const assignmentSchema = new mongoose.Schema({
@@ -120,7 +120,64 @@ const assignmentSchema = new mongoose.Schema({
     required: true,
   },
   assignmentSubmissions: [assignmentSubmissions] // array of assignment submitted students
-})
+});
+
+// Quiz schema
+const quizSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  dueDate: {
+    type: Date,
+    required: true
+  },
+  questions: [
+    {
+      questionText: {
+        type: String,
+        required: true
+      },
+      options: {
+        type: [String], // Array of options for the question
+        required: true
+      },
+      correctAnswer: {
+        type: String, // The correct answer for the question
+        required: true
+      }
+    }
+  ],
+  submissions: [ // Array of quiz submissions
+    {
+     
+      studentEmail: {
+        type: String,
+        required: true
+      },
+      score: {
+        type: Number,
+        required: true
+      },
+      totalQuestions: {
+        type: Number,
+        required: true
+      },
+      answers: {
+        type: [String], // Array to hold student answers
+        required: true
+      },
+      submittedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
+});
 
 // Class schema
 const classSchema = new mongoose.Schema({
@@ -148,7 +205,8 @@ const classSchema = new mongoose.Schema({
   },
   resources: [resourceSchema], // Array of resources
   students: [studentSchema], // Array of students
-  assignments: [assignmentSchema], //Array of assignments
+  assignments: [assignmentSchema], // Array of assignments
+  quizzes: [quizSchema], // Array of quizzes
   meetLink: { type: String, default: null },
   createdAt: {
     type: Date,
