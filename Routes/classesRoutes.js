@@ -405,7 +405,7 @@ router.patch(
     const fileUrl = `/submittedAssignments/${req.file.filename}`;
 
     const newAssignmentSubmission = {
-      assignment_name,
+      assignment_name, //need to change
       student_name,
       student_email,
       submit_file: fileUrl,
@@ -498,8 +498,10 @@ router.get("/user-submissions", async (req, res) => {
     const submissions = userClasses.flatMap((cls) =>
       cls.assignments.flatMap((assignment) =>
         assignment.assignmentSubmissions.map((submission) => ({
+          classID: cls.classId,
           className: cls.className,
           assignmentName: assignment.title,
+          assignmentId: assignment._id,
           ...submission._doc,
         }))
       )
