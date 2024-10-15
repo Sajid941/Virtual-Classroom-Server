@@ -70,10 +70,6 @@ const teacherSchema = new mongoose.Schema({
 
 // Submitted assignment schema
 const assignmentSubmissions = new mongoose.Schema({
-  assignment_name: {
-    type: String,
-    required: true,
-  },
   student_name: {
     type: String,
     required: true,
@@ -90,6 +86,14 @@ const assignmentSubmissions = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  student_marks: {
+    type: Number,
+    required: true,
+  },
+  assignment_feedback: {
+    type: String,
+    require: true,
+  }
 });
 
 // Assignment schema
