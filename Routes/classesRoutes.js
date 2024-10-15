@@ -394,9 +394,9 @@ router.patch(
   submit.single("submit_file"),
   async (req, res) => {
     const { classId, assignmentId } = req.params;
-    const { assignment_name, student_name, student_email } = req.body;
+    const { student_name, student_email } = req.body;
 
-    if (!assignment_name || !student_name || !student_email || !req.file) {
+    if (!student_name || !student_email || !req.file) {
       return res
         .status(400)
         .json({ message: "Missing input data for submission" });
@@ -405,7 +405,6 @@ router.patch(
     const fileUrl = `/submittedAssignments/${req.file.filename}`;
 
     const newAssignmentSubmission = {
-      assignment_name, //need to change
       student_name,
       student_email,
       submit_file: fileUrl,
@@ -463,7 +462,8 @@ router.get("/user-submissions", async (req, res) => {
     const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    let query = role === "teacher"
+    let query =
+      role === "teacher"
         ? { "teacher.email": email }
         : { "students.email": email };
 
@@ -514,4 +514,42 @@ router.get("/user-submissions", async (req, res) => {
   }
 });
 
+// Patch Route for updating with feedback data
+router.patch(
+  "/:classId/assignments/:assignmentId/assignmentSubmissions/:submissionId",
+  async (req, res) => {
+    const { classId, assignmentId, submissionId } = req.params;
+    const { student_marks, assignment_feedback } = req.body;
+
+    try {
+      const updatedClass = await Class.findOneAndUpdate(
+        {
+          classId: classId,
+          "assignments._id": assignmentId,
+          "assignments.assignmentSubmissions._id": submissionId,
+        },
+        {
+          $set: {
+            "assignments.$[assignment].assignmentSubmissions.$[submission].student_marks":
+              student_marks,
+            "assignments.$[assignment].assignmentSubmissions.$[submission].assignment_feedback":
+              assignment_feedback,
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [
+            { "assignment._id": assignmentId },
+            { "submission._id": submissionId },
+          ],
+        }
+      );
+
+      res.status(200).json({ message: "Updated successfully.", updatedClass });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "server error" });
+    }
+  }
+);
 module.exports = router;
