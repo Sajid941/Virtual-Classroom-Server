@@ -176,7 +176,7 @@ const quizSchema = new mongoose.Schema({
         required: true
       },
       answers: {
-        type: [String], // Array to hold student answers
+        type: [Array], // Array to hold student answers
         required: true
       },
       submittedAt: {
