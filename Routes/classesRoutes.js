@@ -5,7 +5,7 @@ const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require("mongodb");
 
 // Nodemailer transporter setup for Gmail
 const transporter = nodemailer.createTransport({
@@ -371,7 +371,7 @@ router.get("/download/:filename", async (req, res) => {
 });
 
 // Route to delete a specific added assignment
-router.delete('/delete/:id', async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -484,16 +484,16 @@ router.get("/user-submissions", async (req, res) => {
     const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    let query = 
+    let query =
       role === "teacher"
         ? { "teacher.email": email }
         : { "students.email": email };
 
     // Only apply filters if valid values are provided
-    if (className && className !== "Select Class") {
+    if (className && className !== "all") {
       query["className"] = { $regex: className, $options: "i" };
     }
-    if (assignmentName && assignmentName !== "Select Assignment") {
+    if (assignmentName && assignmentName !== "all") {
       query["assignments.title"] = { $regex: assignmentName, $options: "i" };
     }
     if (search) {
@@ -516,6 +516,14 @@ router.get("/user-submissions", async (req, res) => {
         .json({ message: "No classes found for this user." });
     }
 
+    // Extract class names
+    const classNames = userClasses.map((cls) => cls.className);
+
+    // Extract assignment names
+    const assignmentNames = userClasses.flatMap((cls) =>
+      cls.assignments.map((assignment) => assignment.title)
+    );
+
     // Aggregate all submissions from the classes
     const submissions = userClasses.flatMap((cls) =>
       cls?.assignments?.flatMap((assignment) =>
@@ -529,7 +537,7 @@ router.get("/user-submissions", async (req, res) => {
       )
     );
 
-    res.status(200).json({ submissions });
+    res.status(200).json({ classNames, assignmentNames, submissions });
   } catch (error) {
     console.error("Error fetching user submissions:", error);
     res.status(500).json({ message: "Server error" });
