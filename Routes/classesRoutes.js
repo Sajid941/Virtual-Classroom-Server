@@ -337,8 +337,11 @@ router.get("/meetlink", async (req, res) => {
 
   try {
     const classData = await Class.findOne({ classId });
+    if (!classData.meetLink) {
+      return res.status(200).json({ message: "No meet link set", meetLink: null });
+  }
 
-    if (!classData || !classData.meetLink) {
+    if (!classData ) {
       return res
         .status(404)
         .json({ message: "Meet link not found for this class" });
