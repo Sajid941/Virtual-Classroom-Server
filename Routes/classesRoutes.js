@@ -490,10 +490,10 @@ router.get("/user-submissions", async (req, res) => {
         : { "students.email": email };
 
     // Only apply filters if valid values are provided
-    if (className && className !== "Select Class") {
+    if (className && className !== "all") {
       query["className"] = { $regex: className, $options: "i" };
     }
-    if (assignmentName && assignmentName !== "Select Assignment") {
+    if (assignmentName && assignmentName !== "all") {
       query["assignments.title"] = { $regex: assignmentName, $options: "i" };
     }
     if (search) {
