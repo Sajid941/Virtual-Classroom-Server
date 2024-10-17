@@ -5,6 +5,7 @@ const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const { ObjectId } = require('mongodb');
 
 // Nodemailer transporter setup for Gmail
 const transporter = nodemailer.createTransport({
@@ -366,6 +367,26 @@ router.get("/download/:filename", async (req, res) => {
       }
     });
   });
+});
+
+// Route to delete a specific added assignment
+router.delete('/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const response = await Class.updateOne(
+      { "assignments._id": new ObjectId(id) },
+      { $pull: { assignments: { _id: new ObjectId(id) } } }
+    );
+
+    if (response.modifiedCount > 0) {
+      res.status(200).json({ message: "Deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Assignment not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // multer storage for submitted assignment
