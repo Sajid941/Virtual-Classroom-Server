@@ -115,7 +115,11 @@ const assignmentSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  dueDate: {
+  start: {
+    type: Date,
+    required: true,
+  },
+  end: {
     type: Date,
     required: true,
   },

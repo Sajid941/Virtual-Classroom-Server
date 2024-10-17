@@ -185,9 +185,9 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, marks, dueDate } = req.body;
+  const { title, description, marks, end } = req.body;
 
-  if (!title || !description || !marks || !dueDate || !req.file) {
+  if (!title || !description || !marks || !end || !req.file) {
     return res
       .status(400)
       .json({ message: "Missing required fields for the assignment" });
@@ -201,7 +201,8 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
     title,
     description,
     marks: marksInt,
-    dueDate,
+    start: new Date(),
+    end,
     fileUrl,
   };
 
@@ -483,7 +484,7 @@ router.get("/user-submissions", async (req, res) => {
     const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    let query =
+    let query = 
       role === "teacher"
         ? { "teacher.email": email }
         : { "students.email": email };
@@ -517,8 +518,8 @@ router.get("/user-submissions", async (req, res) => {
 
     // Aggregate all submissions from the classes
     const submissions = userClasses.flatMap((cls) =>
-      cls.assignments.flatMap((assignment) =>
-        assignment.assignmentSubmissions.map((submission) => ({
+      cls?.assignments?.flatMap((assignment) =>
+        assignment?.assignmentSubmissions?.map((submission) => ({
           classID: cls.classId,
           className: cls.className,
           assignmentName: assignment.title,
