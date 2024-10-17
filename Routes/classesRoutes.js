@@ -247,6 +247,7 @@ router.patch("/:classId/students", async (req, res) => {
 router.patch("/:classId/quiz", async (req, res) => {
   const { classId } = req.params;
   const { quiz } = req.body; // Assuming quiz is an object or an array of quiz objects
+
   try {
     const classData = await Class.findOneAndUpdate(
       { classId },
@@ -255,7 +256,6 @@ router.patch("/:classId/quiz", async (req, res) => {
       },
       { new: true, upsert: true } // Enable upsert
     );
-    console.log(classData);
     res
       .status(classData ? 200 : 404)
       .json(classData || { message: "Class not found" });
@@ -263,6 +263,38 @@ router.patch("/:classId/quiz", async (req, res) => {
     res.status(500).json({ message: "Failed to add quiz", error });
   }
 });
+//checking if already quiz taken
+router.get("/:classId/quizsubmission/:studentEmail", async (req, res) => {
+  const { classId, studentEmail } = req.params;
+
+  // Find the class by classId
+  const classData = await Class.findOne({ classId });
+  if (!classData) {
+    return res.status(404).json({ message: "Class not found" });
+  }
+
+  // Find the quiz (You can modify the logic to identify the correct quiz)
+  const quiz = classData.quizzes[0];
+  if (!quiz) {
+    return res.status(404).json({ message: "Quiz not found" });
+  }
+
+
+  // If the student has already submitted, return the submission data
+  const submission = quiz.submissions.find(
+    (submission) => submission.studentEmail === studentEmail
+  );
+  console.log(submission);
+  if(submission){
+
+    return res.status(200).json({
+      message: "Student has already submitted this quiz",
+      submission // Return the submission data
+    });
+  }
+  res.status(404).json({message: "Student has not submitted this quiz"});
+});
+
 router.patch("/:classId/quizsubmission", async (req, res) => {
   const { classId } = req.params; // The class we are targeting
   const { submissionData } = req.body; // submissionData contains student's submission
@@ -270,26 +302,14 @@ router.patch("/:classId/quizsubmission", async (req, res) => {
   try {
     // Step 1: Find the class by classId
     const classData = await Class.findOne({ classId });
-
+    console.log(classData);
     // Step 2: Check if the class exists
     if (!classData) {
       return res.status(404).json({ message: "Class not found" });
     }
 
-    // Step 3: Check if there is at least one quiz in the quizzes array
-    if (classData.quizzes.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No quizzes found in this class" });
-    }
-
     // Step 4: Target the first quiz in the quizzes array
     const quiz = classData.quizzes[0];
-
-    // Step 5: If the quiz doesn't have a submissions field, initialize it as an empty array
-    if (!quiz.submissions) {
-      quiz.submissions = [];
-    }
 
     // Step 6: Push the submissionData (student's quiz submission) into the submissions array
     quiz.submissions.push(submissionData);
