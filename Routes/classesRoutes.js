@@ -5,6 +5,7 @@ const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const { ObjectId } = require('mongodb');
 
 // Nodemailer transporter setup for Gmail
 const transporter = nodemailer.createTransport({
@@ -184,9 +185,9 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, marks, dueDate } = req.body;
+  const { title, description, marks, end } = req.body;
 
-  if (!title || !description || !marks || !dueDate || !req.file) {
+  if (!title || !description || !marks || !end || !req.file) {
     return res
       .status(400)
       .json({ message: "Missing required fields for the assignment" });
@@ -200,7 +201,8 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
     title,
     description,
     marks: marksInt,
-    dueDate,
+    start: new Date(),
+    end,
     fileUrl,
   };
 
@@ -368,6 +370,26 @@ router.get("/download/:filename", async (req, res) => {
   });
 });
 
+// Route to delete a specific added assignment
+router.delete('/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const response = await Class.updateOne(
+      { "assignments._id": new ObjectId(id) },
+      { $pull: { assignments: { _id: new ObjectId(id) } } }
+    );
+
+    if (response.modifiedCount > 0) {
+      res.status(200).json({ message: "Deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Assignment not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // multer storage for submitted assignment
 // const submitDir = path.join(__dirname, '../submittedAssignments');
 const submitDir = process.env.SUBMIT_DIR || "/tmp/submittedAssignments";
@@ -462,7 +484,7 @@ router.get("/user-submissions", async (req, res) => {
     const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    let query =
+    let query = 
       role === "teacher"
         ? { "teacher.email": email }
         : { "students.email": email };
@@ -496,8 +518,8 @@ router.get("/user-submissions", async (req, res) => {
 
     // Aggregate all submissions from the classes
     const submissions = userClasses.flatMap((cls) =>
-      cls.assignments.flatMap((assignment) =>
-        assignment.assignmentSubmissions.map((submission) => ({
+      cls?.assignments?.flatMap((assignment) =>
+        assignment?.assignmentSubmissions?.map((submission) => ({
           classID: cls.classId,
           className: cls.className,
           assignmentName: assignment.title,
