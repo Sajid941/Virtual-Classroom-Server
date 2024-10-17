@@ -162,6 +162,62 @@ router.get("/student", async (req, res) => {
   }
 });
 
+router.get("/assignments/teacher", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
+  }
+
+  try {
+    const assignments = await Class.find({ "teacher.email": email },
+      { assignments: 1 });
+    res.send(assignments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+})
+router.get("/assignments/student", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
+  }
+
+  try {
+    const assignments = await Class.find({ "students.email": email },
+      { assignments: 1 });
+    res.send(assignments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+})
+
+router.patch("/assignments/deadline", async (req, res) => {
+  const { deadline } = req.body;
+  const {id}= req.params;
+
+  if (!deadline) {
+    return res
+      .status(400)
+      .json({ message: "Deadline query parameter is required" });
+  }
+  try {
+    const result = await Class.findOneAndUpdate(
+      { classId: id },
+      { $set: { end: deadline } },
+      { upsert: true }
+    );
+    res.send(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+})
+
 // Fetch class by classId
 router.get("/classid", async (req, res) => {
   const { id } = req.query;
