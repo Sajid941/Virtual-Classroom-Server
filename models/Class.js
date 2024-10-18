@@ -127,6 +127,10 @@ const assignmentSchema = new mongoose.Schema({
     type: String, // Path to the uploaded file
     required: true,
   },
+  classId: {
+    type: String,
+    required: true,
+  },
   assignmentSubmissions: [assignmentSubmissions] // array of assignment submitted students
 });
 
