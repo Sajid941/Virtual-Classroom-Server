@@ -640,21 +640,31 @@ router.get("/assignments/student", async (req, res) => {
 });
 router.patch("/assignments/deadline", async (req, res) => {
   const { deadline } = req.body;
-  const { id } = req.params;
+  const { id, classId } = req.query; 
+
   if (!deadline) {
-      return res
-          .status(400)
-          .json({ message: "Deadline query parameter is required" });
+    return res.status(400).json({ message: "Deadline is required" });
   }
+  if (!id || !classId) {
+    return res.status(400).json({ message: "Assignment ID and Class ID are required" });
+  }
+
   try {
-      const result = await Class.findOneAndUpdate(
-          { classId: id },
-          { $set: { end: deadline } },
-          { upsert: true }
-      );
-      res.send(result);
+    
+    const result = await Class.findOneAndUpdate(
+      { classId: classId, "assignments._id": id }, 
+      { $set: { "assignments.$.end": deadline } }, 
+      { new: true } 
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+
+    res.send(result); 
   } catch (err) {
-      res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
+
 module.exports = router;
