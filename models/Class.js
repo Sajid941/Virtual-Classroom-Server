@@ -70,10 +70,6 @@ const teacherSchema = new mongoose.Schema({
 
 // Submitted assignment schema
 const assignmentSubmissions = new mongoose.Schema({
-  assignment_name: {
-    type: String,
-    required: true,
-  },
   student_name: {
     type: String,
     required: true,
@@ -90,6 +86,14 @@ const assignmentSubmissions = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  student_marks: {
+    type: Number,
+    required: true,
+  },
+  assignment_feedback: {
+    type: String,
+    require: true,
+  }
 });
 
 // Assignment schema
@@ -111,12 +115,20 @@ const assignmentSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  dueDate: {
+  start: {
+    type: Date,
+    required: true,
+  },
+  end: {
     type: Date,
     required: true,
   },
   fileUrl: {
     type: String, // Path to the uploaded file
+    required: true,
+  },
+  classId: {
+    type: String,
     required: true,
   },
   assignmentSubmissions: [assignmentSubmissions] // array of assignment submitted students
@@ -168,7 +180,7 @@ const quizSchema = new mongoose.Schema({
         required: true
       },
       answers: {
-        type: [String], // Array to hold student answers
+        type: [Array], // Array to hold student answers
         required: true
       },
       submittedAt: {

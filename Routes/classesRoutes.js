@@ -5,6 +5,7 @@ const path = require("path");
 const Class = require("../models/Class");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const { ObjectId } = require("mongodb");
 
 // Nodemailer transporter setup for Gmail
 const transporter = nodemailer.createTransport({
@@ -184,9 +185,9 @@ router.get("/classid", async (req, res) => {
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
   const { classId } = req.params;
-  const { title, description, marks, dueDate } = req.body;
+  const { title, description, marks, end } = req.body;
 
-  if (!title || !description || !marks || !dueDate || !req.file) {
+  if (!title || !description || !marks || !end || !req.file) {
     return res
       .status(400)
       .json({ message: "Missing required fields for the assignment" });
@@ -200,8 +201,10 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
     title,
     description,
     marks: marksInt,
-    dueDate,
+    start: new Date(),
+    end,
     fileUrl,
+    classId,
   };
 
   try {
@@ -242,65 +245,6 @@ router.patch("/:classId/students", async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
-router.patch("/:classId/quiz", async (req, res) => {
-  const { classId } = req.params;
-  const { quiz } = req.body; // Assuming quiz is an object or an array of quiz objects
-  try {
-    const classData = await Class.findOneAndUpdate(
-      { classId },
-      {
-        $addToSet: { quizzes: { $each: Array.isArray(quiz) ? quiz : [quiz] } },
-      },
-      { new: true, upsert: true } // Enable upsert
-    );
-    console.log(classData);
-    res
-      .status(classData ? 200 : 404)
-      .json(classData || { message: "Class not found" });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to add quiz", error });
-  }
-});
-router.patch("/:classId/quizsubmission", async (req, res) => {
-  const { classId } = req.params; // The class we are targeting
-  const { submissionData } = req.body; // submissionData contains student's submission
-
-  try {
-    // Step 1: Find the class by classId
-    const classData = await Class.findOne({ classId });
-
-    // Step 2: Check if the class exists
-    if (!classData) {
-      return res.status(404).json({ message: "Class not found" });
-    }
-
-    // Step 3: Check if there is at least one quiz in the quizzes array
-    if (classData.quizzes.length === 0) {
-      return res.status(404).json({ message: "No quizzes found in this class" });
-    }
-
-    // Step 4: Target the first quiz in the quizzes array
-    const quiz = classData.quizzes[0];
-
-    // Step 5: If the quiz doesn't have a submissions field, initialize it as an empty array
-    if (!quiz.submissions) {
-      quiz.submissions = [];
-    }
-
-    // Step 6: Push the submissionData (student's quiz submission) into the submissions array
-    quiz.submissions.push(submissionData);
-
-    // Step 7: Save the updated class data
-    await classData.save();
-
-    // Step 8: Return the updated class data with success response
-    res.status(200).json(classData);
-  } catch (error) {
-    console.error("Error updating quiz submissions:", error);
-    res.status(500).json({ message: "Failed to update quiz submissions", error });
-  }
-});
-
 
 
 // Patch for updating meet link
@@ -366,6 +310,26 @@ router.get("/download/:filename", async (req, res) => {
   });
 });
 
+// Route to delete a specific added assignment
+router.delete("/delete/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const response = await Class.updateOne(
+      { "assignments._id": new ObjectId(id) },
+      { $pull: { assignments: { _id: new ObjectId(id) } } }
+    );
+
+    if (response.modifiedCount > 0) {
+      res.status(200).json({ message: "Deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Assignment not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // multer storage for submitted assignment
 // const submitDir = path.join(__dirname, '../submittedAssignments');
 const submitDir = process.env.SUBMIT_DIR || "/tmp/submittedAssignments";
@@ -392,9 +356,9 @@ router.patch(
   submit.single("submit_file"),
   async (req, res) => {
     const { classId, assignmentId } = req.params;
-    const { assignment_name, student_name, student_email } = req.body;
+    const { student_name, student_email } = req.body;
 
-    if (!assignment_name || !student_name || !student_email || !req.file) {
+    if (!student_name || !student_email || !req.file) {
       return res
         .status(400)
         .json({ message: "Missing input data for submission" });
@@ -403,7 +367,6 @@ router.patch(
     const fileUrl = `/submittedAssignments/${req.file.filename}`;
 
     const newAssignmentSubmission = {
-      assignment_name,
       student_name,
       student_email,
       submit_file: fileUrl,
@@ -456,38 +419,170 @@ router.get("/submitted-file-download/:filename", async (req, res) => {
 });
 
 // Route to get all assignment submissions of classes based on user role
-router.get('/user-submissions', async (req, res) => {
+router.get("/user-submissions", async (req, res) => {
   try {
-    const { email, role } = req.query;
+    const { email, role, className, assignmentName, search } = req.query;
 
     // Query based on role
-    const filter = role === 'teacher'
-      ? { 'teacher.email': email }
-      : { 'students.email': email };
-      
-    // Find all relevant classes
-    const userClasses = await Class.find(filter);
+    let query =
+      role === "teacher"
+        ? { "teacher.email": email }
+        : { "students.email": email };
 
-    if (!userClasses.length) {
-      return res.status(404).json({ message: 'No classes found for this user.' });
+    // Only apply filters if valid values are provided
+    if (className && className !== "all") {
+      query["className"] = { $regex: className, $options: "i" };
+    }
+    if (assignmentName && assignmentName !== "all") {
+      query["assignments.title"] = { $regex: assignmentName, $options: "i" };
+    }
+    if (search) {
+      query.$or = [
+        { "assignments.title": { $regex: search, $options: "i" } },
+        {
+          "assignments.assignmentSubmissions.student_name": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
     }
 
-    // Aggregate all submissions from the fetched classes
-    const submissions = userClasses.flatMap(cls =>
-      cls.assignments.flatMap(assignment =>
-        assignment.assignmentSubmissions.map(submission => ({
+    const userClasses = await Class.find(query);
+
+    if (!userClasses.length) {
+      return res
+        .status(404)
+        .json({ message: "No classes found for this user." });
+    }
+
+    // Extract class names
+    const classNames = userClasses.map((cls) => cls.className);
+
+    // Extract assignment names
+    const assignmentNames = userClasses.flatMap((cls) =>
+      cls.assignments.map((assignment) => assignment.title)
+    );
+
+    // Aggregate all submissions from the classes
+    const submissions = userClasses.flatMap((cls) =>
+      cls?.assignments?.flatMap((assignment) =>
+        assignment?.assignmentSubmissions?.map((submission) => ({
+          classID: cls.classId,
           className: cls.className,
           assignmentName: assignment.title,
-          ...submission._doc, // Include submission data
+          assignmentId: assignment._id,
+          ...submission._doc,
         }))
       )
     );
 
-    res.status(200).json({ submissions });
-
+    res.status(200).json({ classNames, assignmentNames, submissions });
   } catch (error) {
-    console.error('Error fetching user submissions:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching user submissions:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Patch Route for updating with feedback data
+router.patch(
+  "/:classId/assignments/:assignmentId/assignmentSubmissions/:submissionId",
+  async (req, res) => {
+    const { classId, assignmentId, submissionId } = req.params;
+    const { student_marks, assignment_feedback } = req.body;
+
+    try {
+      const updatedClass = await Class.findOneAndUpdate(
+        {
+          classId: classId,
+          "assignments._id": assignmentId,
+          "assignments.assignmentSubmissions._id": submissionId,
+        },
+        {
+          $set: {
+            "assignments.$[assignment].assignmentSubmissions.$[submission].student_marks":
+              student_marks,
+            "assignments.$[assignment].assignmentSubmissions.$[submission].assignment_feedback":
+              assignment_feedback,
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [
+            { "assignment._id": assignmentId },
+            { "submission._id": submissionId },
+          ],
+        }
+      );
+
+      res.status(200).json({ message: "Updated successfully.", updatedClass });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "server error" });
+    }
+  }
+);
+
+router.get("/assignments/teacher", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+      return res
+          .status(400)
+          .json({ message: "Email query parameter is required" });
+  }
+  try {
+      const assignments = await Class.find(
+          { "teacher.email": email },
+          { assignments: 1 }
+      );
+      res.send(assignments);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
+router.get("/assignments/student", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+      return res
+          .status(400)
+          .json({ message: "Email query parameter is required" });
+  }
+  try {
+      const assignments = await Class.find(
+          { "students.email": email },
+          { assignments: 1 }
+      );
+      res.send(assignments);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
+router.patch("/assignments/deadline", async (req, res) => {
+  const { deadline } = req.body;
+  const { id, classId } = req.query; 
+
+  if (!deadline) {
+    return res.status(400).json({ message: "Deadline is required" });
+  }
+  if (!id || !classId) {
+    return res.status(400).json({ message: "Assignment ID and Class ID are required" });
+  }
+
+  try {
+    
+    const result = await Class.findOneAndUpdate(
+      { classId: classId, "assignments._id": id }, 
+      { $set: { "assignments.$.end": deadline } }, 
+      { new: true } 
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+
+    res.send(result); 
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
