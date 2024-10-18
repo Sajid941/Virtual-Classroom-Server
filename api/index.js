@@ -42,6 +42,7 @@ mongoose
 // Route Imports
 const userRoute = require("../Routes/userRoutes");
 const classesRoute = require("../Routes/classesRoutes");
+const quizRoute = require("../Routes/quizRiutes");
 const developersRoute = require("../Routes/developersRoutes");
 const discussionsRoute = require("../Routes/discussionsRoutes");
 const chatRoute = require("../Routes/chatRoutes");
@@ -50,6 +51,7 @@ const authController = require("../controllers/authController");
 // Routes
 app.use("/users", userRoute);
 app.use("/classes", classesRoute); 
+app.use("/quizzes", quizRoute); 
 app.use("/developers", developersRoute);
 app.use("/discussions", verifyToken, discussionsRoute); 
 app.use("/chats", chatRoute);
