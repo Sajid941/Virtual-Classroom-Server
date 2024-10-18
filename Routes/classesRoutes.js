@@ -204,6 +204,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
     start: new Date(),
     end,
     fileUrl,
+    classId,
   };
 
   try {
@@ -510,10 +511,10 @@ router.get("/user-submissions", async (req, res) => {
         : { "students.email": email };
 
     // Only apply filters if valid values are provided
-    if (className && className !== "Select Class") {
+    if (className && className !== "all") {
       query["className"] = { $regex: className, $options: "i" };
     }
-    if (assignmentName && assignmentName !== "Select Assignment") {
+    if (assignmentName && assignmentName !== "all") {
       query["assignments.title"] = { $regex: assignmentName, $options: "i" };
     }
     if (search) {
@@ -536,6 +537,14 @@ router.get("/user-submissions", async (req, res) => {
         .json({ message: "No classes found for this user." });
     }
 
+    // Extract class names
+    const classNames = userClasses.map((cls) => cls.className);
+
+    // Extract assignment names
+    const assignmentNames = userClasses.flatMap((cls) =>
+      cls.assignments.map((assignment) => assignment.title)
+    );
+
     // Aggregate all submissions from the classes
     const submissions = userClasses.flatMap((cls) =>
       cls?.assignments?.flatMap((assignment) =>
@@ -549,7 +558,7 @@ router.get("/user-submissions", async (req, res) => {
       )
     );
 
-    res.status(200).json({ submissions });
+    res.status(200).json({ classNames, assignmentNames, submissions });
   } catch (error) {
     console.error("Error fetching user submissions:", error);
     res.status(500).json({ message: "Server error" });
@@ -594,4 +603,58 @@ router.patch(
     }
   }
 );
+
+router.get("/assignments/teacher", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+      return res
+          .status(400)
+          .json({ message: "Email query parameter is required" });
+  }
+  try {
+      const assignments = await Class.find(
+          { "teacher.email": email },
+          { assignments: 1 }
+      );
+      res.send(assignments);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
+router.get("/assignments/student", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+      return res
+          .status(400)
+          .json({ message: "Email query parameter is required" });
+  }
+  try {
+      const assignments = await Class.find(
+          { "students.email": email },
+          { assignments: 1 }
+      );
+      res.send(assignments);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
+router.patch("/assignments/deadline", async (req, res) => {
+  const { deadline } = req.body;
+  const { id } = req.params;
+  if (!deadline) {
+      return res
+          .status(400)
+          .json({ message: "Deadline query parameter is required" });
+  }
+  try {
+      const result = await Class.findOneAndUpdate(
+          { classId: id },
+          { $set: { end: deadline } },
+          { upsert: true }
+      );
+      res.send(result);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;
