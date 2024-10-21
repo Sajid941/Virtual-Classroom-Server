@@ -121,6 +121,18 @@ router.post("/", async (req, res) => {
   }
 });
 
+//deleting class
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const classId = req.params.id;
+    console.log("classid",classId);
+    const deletedClass = await Class.deleteOne({ classId });
+    res.status(200).send({ message: "Class deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 // Fetch classes for a specific teacher
 router.get("/teacher", async (req, res) => {
   const { email } = req.query;
@@ -585,5 +597,7 @@ router.patch("/assignments/deadline", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 
 module.exports = router;
