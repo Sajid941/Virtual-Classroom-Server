@@ -210,18 +210,18 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
   const fileUrl = `/assignmentUploads/${req.file.filename}`;
 
   const newAssignment = {
+    classId,
     title,
     description,
     marks: marksInt,
     start: new Date(),
     end,
     fileUrl,
-    classId,
   };
 
   try {
     const updatedClass = await Class.findOneAndUpdate(
-      { classId },
+      { classId: classId },
       { $push: { assignments: newAssignment } },
       { new: true }
     );
@@ -234,7 +234,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
           : { message: "Class not found" }
       );
   } catch (err) {
-    res.status(500).json({ message: err.message });
+  res.status(500).json({ message: `${err.message},500 error` });
   }
 });
 
