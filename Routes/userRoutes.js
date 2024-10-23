@@ -105,7 +105,6 @@ router.post("/", async (req, res) => {
 
     // Create and save the new user
     const newUser = new User({ email, name ,role, profileImage });
-    console.log(newUser);
     await newUser.save();
 
     res.status(201).json({ message: "User created successfully." });

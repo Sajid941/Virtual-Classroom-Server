@@ -48,7 +48,6 @@ const sendEmailNotification = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending email:", error);
   }
@@ -125,7 +124,6 @@ router.post("/", async (req, res) => {
 router.delete('/delete/:id', async (req, res) => {
   try {
     const classId = req.params.id;
-    console.log("classid",classId);
     const deletedClass = await Class.deleteOne({ classId });
     res.status(200).send({ message: "Class deleted successfully" });
   } catch (error) {
