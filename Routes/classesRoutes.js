@@ -321,7 +321,7 @@ router.get("/download/:filename", async (req, res) => {
 });
 
 // Route to delete a specific added assignment
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete-assignment/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
