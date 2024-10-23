@@ -42,7 +42,6 @@ router.patch("/:classId/quiz", async (req, res) => {
     const submission = quiz.submissions.find(
       (submission) => submission.studentEmail === studentEmail
     );
-    console.log(submission);
     if(submission){
   
       return res.status(200).json({
@@ -73,7 +72,6 @@ router.patch("/:classId/quiz", async (req, res) => {
         
         // Step 7: Save the updated class data
         await classData.save();
-        console.log(classData);
   
       // Step 8: Return the updated class data with success response
       res.status(200).json(classData);
