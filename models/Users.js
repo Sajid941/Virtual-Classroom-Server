@@ -19,9 +19,21 @@ const userSchema = new mongoose.Schema({
     type: String,
     default:"https://i.postimg.cc/CLkQzVS1/user-1.png",
   },
+  userType: {
+    type: String,
+    enum: ["normal", "premium"],
+    default: "normal",
+  },
+  password: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  transactionId: {
+    type: String,
   }
 });
 

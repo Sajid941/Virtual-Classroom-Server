@@ -48,7 +48,6 @@ const sendEmailNotification = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending email:", error);
   }
@@ -118,6 +117,17 @@ router.post("/", async (req, res) => {
     sendEmailNotification(teacherName, teacherEmail, subject, classId);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+//deleting class
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const classId = req.params.id;
+    const deletedClass = await Class.deleteOne({ classId });
+    res.status(200).send({ message: "Class deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
@@ -311,7 +321,7 @@ router.get("/download/:filename", async (req, res) => {
 });
 
 // Route to delete a specific added assignment
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete-assignment/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -585,5 +595,17 @@ router.patch("/assignments/deadline", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+router.get("/count", async (req, res) => {
+  const { email } = req.query;
+  try {
+    const classes = await Class.countDocuments({"teacher.email": email});
+    res.status(200).send({count:classes});
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+})
+
+
 
 module.exports = router;

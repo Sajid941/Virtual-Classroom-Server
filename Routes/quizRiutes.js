@@ -42,7 +42,6 @@ router.patch("/:classId/quiz", async (req, res) => {
     const submission = quiz.submissions.find(
       (submission) => submission.studentEmail === studentEmail
     );
-    console.log(submission);
     if(submission){
   
       return res.status(200).json({
@@ -73,7 +72,6 @@ router.patch("/:classId/quiz", async (req, res) => {
         
         // Step 7: Save the updated class data
         await classData.save();
-        console.log(classData);
   
       // Step 8: Return the updated class data with success response
       res.status(200).json(classData);
@@ -84,5 +82,67 @@ router.patch("/:classId/quiz", async (req, res) => {
         .json({ message: "Failed to update quiz submissions", error });
     }
   });
+  router.get("/quizzes/submitted", async (req, res) => {
+  const { studentEmail } = req.query;
+
+  if (!studentEmail) {
+    return res.status(400).json({ message: "Student email is required" });
+  }
+
+  try {
+    // Find all classes where the student has submitted quizzes
+    const classes = await Class.find({
+      "quizzes.submissions.studentEmail": studentEmail,
+    });
+
+    // Filter out quizzes the student has submitted
+    const submittedQuizzes = classes.flatMap((classObj) =>
+      classObj.quizzes.filter((quiz) =>
+        quiz.submissions.some(
+          (submission) => submission.studentEmail === studentEmail
+        )
+      )
+    );
+
+    return res.json({ quizzes: submittedQuizzes });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/submissions", async (req, res) => {
+  const { studentEmail } = req.query;
+
+  if (!studentEmail) {
+    return res.status(400).json({ message: "Student email is required" });
+  }
+
+  try {
+    // Find all classes where the student has submitted quizzes
+    const classes = await Class.find({
+      "quizzes.submissions.studentEmail": studentEmail,
+    });
+
+    // Extract submission details only for the specific student
+    const submissions = classes.flatMap((classObj) =>
+      classObj.quizzes.flatMap((quiz) =>
+        quiz.submissions
+          .filter((submission) => submission.studentEmail === studentEmail)
+          .map((submission) => ({
+            quizTitle: quiz.title,
+            score: submission.score,
+            totalQuestions: submission.totalQuestions,
+            answers: submission.answers,
+            submittedAt: submission.submittedAt,
+          }))
+      )
+    );
+
+    return res.json({ submissions });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
   
 module.exports = router;

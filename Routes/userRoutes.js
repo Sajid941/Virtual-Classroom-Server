@@ -105,7 +105,6 @@ router.post("/", async (req, res) => {
 
     // Create and save the new user
     const newUser = new User({ email, name ,role, profileImage });
-    console.log(newUser);
     await newUser.save();
 
     res.status(201).json({ message: "User created successfully." });
@@ -113,6 +112,25 @@ router.post("/", async (req, res) => {
     res
       .status(500)
       .json({ message: "Error creating user", error: error.message });
+  }
+});
+
+router.get("/userType", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res
+      .status(400)
+      .send({ message: "Email query parameter is required." });
+  }
+
+  try {
+    const userType = await User.findOne({ email ,role:"teacher"},{userType:1});
+
+    res.send(userType);
+  } catch (err) {
+    res
+      .status(500)
+      .send({ message: "Error fetching user", error: err.message });
   }
 });
 
