@@ -596,6 +596,16 @@ router.patch("/assignments/deadline", async (req, res) => {
   }
 });
 
+router.get("/count", async (req, res) => {
+  const { email } = req.query;
+  try {
+    const classes = await Class.countDocuments({"teacher.email": email});
+    res.status(200).send({count:classes});
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+})
+
 
 
 module.exports = router;
