@@ -25,6 +25,7 @@ app.use(
     })
 );
 app.use(express.json());
+app.use(express.urlencoded())
 
 // MongoDB Connection
 mongoose
@@ -47,6 +48,7 @@ const developersRoute = require("../Routes/developersRoutes");
 const discussionsRoute = require("../Routes/discussionsRoutes");
 const chatRoute = require("../Routes/chatRoutes");
 const authController = require("../controllers/authController");
+const paymentRoute = require("../Routes/paymentRoutes");
 
 // Routes
 app.use("/users", userRoute);
@@ -56,6 +58,7 @@ app.use("/developers", developersRoute);
 app.use("/discussions", verifyToken, discussionsRoute); 
 app.use("/chats", chatRoute);
 app.use("/jwt", authController);
+app.use("/payment", paymentRoute);
 
 const server = createServer(app);
 const io = new Server(server, {
