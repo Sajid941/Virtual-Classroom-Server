@@ -13,7 +13,7 @@ const paymentSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    paymentId: {
+    transactionId: {
         type: String,
         required: true,
     },
@@ -25,6 +25,9 @@ const paymentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    cardType: {
+        type: String,
+    },
 });
-const payments = mongoose.model("payments", paymentSchema);
-module.exports = { payments };
+const Payment = mongoose.model("payments", paymentSchema);
+module.exports = { Payment };
