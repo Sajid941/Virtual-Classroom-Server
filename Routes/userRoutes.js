@@ -115,4 +115,23 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/userType", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res
+      .status(400)
+      .send({ message: "Email query parameter is required." });
+  }
+
+  try {
+    const userType = await User.findOne({ email ,role:"teacher"},{userType:1});
+
+    res.send(userType);
+  } catch (err) {
+    res
+      .status(500)
+      .send({ message: "Error fetching user", error: err.message });
+  }
+});
+
 module.exports = router;
