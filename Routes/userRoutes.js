@@ -95,7 +95,7 @@ router.get("/email", async (req, res) => {
 // Add new user (POST /users)
 router.post("/", async (req, res) => {
   const { email, name ,role, profileImage } = req.body;
-
+  
   try {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -105,6 +105,7 @@ router.post("/", async (req, res) => {
 
     // Create and save the new user
     const newUser = new User({ email, name ,role, profileImage });
+    
     await newUser.save();
 
     res.status(201).json({ message: "User created successfully." });
