@@ -14,9 +14,9 @@ router.post("/create-payment", async (req, res) => {
         total_amount: "5000",
         currency: "BDT",
         tran_id: transactionId,
-        success_url: "http://localhost:3000/payment/success-payment",
-        fail_url: "http://yoursite.com/fail.php",
-        cancel_url: "http://yoursite.com/cancel.php",
+        success_url: `${process.env.SERVER_URL}/payment/success-payment`,
+        fail_url: `${process.env.SERVER_URL}/payment/fail-payment`,
+        cancel_url: `${process.env.SERVER_URL}/payment/cancel-payment`,
         cus_name: name,
         cus_email: email,
         cus_add1: "Dhaka",
@@ -91,6 +91,19 @@ router.post("/success-payment", async (req, res) => {
         { transactionId: successData.tran_id },
         { userType: "premium" }
     );
+
+    res.redirect(`${process.env.CLIENT_URL}/paymentSuccess`);
+});
+
+router.post("/cancel-payment", async (req, res) => {
+    const cancelData = req.body;
+    console.log(cancelData);
+    res.redirect(`${process.env.CLIENT_URL}/paymentCancel`);
+});
+router.post("/fail-payment", async (req, res) => {
+    const failedData = req.body;
+    console.log(failedData);
+    res.redirect(`${process.env.CLIENT_URL}/paymentFailed`);
 });
 
 module.exports = router;

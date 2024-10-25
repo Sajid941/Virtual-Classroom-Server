@@ -1,18 +1,18 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Message schema for students' messages and replies
 const messageSchema = new mongoose.Schema({
   user: {
     type: String,
-    required: true
+    required: true,
   },
   text: {
     type: String,
-    required: true
+    required: true,
   },
   time: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   replies: [
     {
@@ -20,56 +20,56 @@ const messageSchema = new mongoose.Schema({
       text: String,
       time: {
         type: Date,
-        default: Date.now
-      }
-    }
-  ]
+        default: Date.now,
+      },
+    },
+  ],
 });
 
 // Student schema
 const studentSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
   },
   email: {
     type: String,
-    required: true
+    required: true,
   },
-  messages: [messageSchema] // Array of messages
+  messages: [messageSchema], // Array of messages
 });
 
 // Resource schema
 const resourceSchema = new mongoose.Schema({
   resourceId: {
     type: String,
-    required: true
+    required: true,
   },
   type: {
     type: String,
-    enum: ['ZIP', 'Code', 'Comments'],
-    required: true
+    enum: ["ZIP", "Code", "Comments"],
+    required: true,
   },
   description: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // Teacher schema
 const teacherSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
   },
   email: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // Submitted assignment schema
-const assignmentSubmissions = new mongoose.Schema({
+const assignmentsSubmissions = new mongoose.Schema({
   student_name: {
     type: String,
     required: true,
@@ -78,11 +78,11 @@ const assignmentSubmissions = new mongoose.Schema({
     type: String,
     required: true,
   },
-  submit_file:{
+  submit_file: {
     type: String,
     required: true,
   },
-  submitAt:{
+  submitAt: {
     type: Date,
     required: true,
   },
@@ -93,7 +93,7 @@ const assignmentSubmissions = new mongoose.Schema({
   assignment_feedback: {
     type: String,
     require: true,
-  }
+  },
 });
 
 // Assignment schema
@@ -113,7 +113,7 @@ const assignmentSchema = new mongoose.Schema({
   },
   marks: {
     type: Number,
-    required: true
+    required: true,
   },
   start: {
     type: Date,
@@ -131,64 +131,67 @@ const assignmentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  assignmentSubmissions: [assignmentSubmissions] // array of assignment submitted students
+  assignmentSubmissions: [assignmentsSubmissions], // array of assignment submitted students
 });
 
 // Quiz schema
+const quizSubmissions = new mongoose.Schema({
+  studentEmail: {
+    type: String,
+    required: true,
+  },
+  score: {
+    type: Number,
+    required: true,
+  },
+  totalQuestions: {
+    type: Number,
+    required: true,
+  },
+  answers: {
+    type: [Array], // Array to hold student answers
+    required: true,
+  },
+  submittedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+const questionSchema = new mongoose.Schema({
+  questionText: {
+    type: String,
+    required: true,
+  },
+  options: {
+    type: [String], // Array of options for the question
+    required: true,
+  },
+  correctAnswer: {
+    type: String, // The correct answer for the question
+    required: true,
+  },
+});
 const quizSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
   },
   description: {
     type: String,
-    required: true
+    required: true,
   },
   dueDate: {
     type: Date,
-    required: true
+    required: true,
   },
   questions: [
-    {
-      questionText: {
-        type: String,
-        required: true
-      },
-      options: {
-        type: [String], // Array of options for the question
-        required: true
-      },
-      correctAnswer: {
-        type: String, // The correct answer for the question
-        required: true
-      }
-    }
+    // Array of quiz questions
+    questionSchema,
   ],
-  submissions: [ // Array of quiz submissions
-    {
-     
-      studentEmail: {
-        type: String,
-        required: true
-      },
-      score: {
-        type: Number,
-        required: true
-      },
-      totalQuestions: {
-        type: Number,
-        required: true
-      },
-      answers: {
-        type: [Array], // Array to hold student answers
-        required: true
-      },
-      submittedAt: {
-        type: Date,
-        default: Date.now
-      }
-    }
-  ]
+  submissions: [
+    // Array of quiz submissions
+    quizSubmissions,
+  ],
 });
 
 // Class schema
@@ -196,24 +199,24 @@ const classSchema = new mongoose.Schema({
   classId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   className: {
     type: String,
-    required: true
+    required: true,
   },
   section: {
     type: String,
-    required: true
+    required: true,
   },
   subject: {
     type: String,
-    required: true
+    required: true,
   },
   teacher: teacherSchema, // Embedding teacher schema
   classImage: {
     type: String,
-    required: true
+    required: true,
   },
   resources: [resourceSchema], // Array of resources
   students: [studentSchema], // Array of students
@@ -223,10 +226,10 @@ const classSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 // Exporting the class model
-const Class = mongoose.model('Class', classSchema);
+const Class = mongoose.model("Class", classSchema);
 
 module.exports = Class;
