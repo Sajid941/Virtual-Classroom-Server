@@ -82,38 +82,39 @@ router.get("/slug/:slug", async (req, res) => {
 // Route to add a reply to a discussion
 // Route to add a reply to a discussion
 router.patch("/:discussionId", async (req, res) => {
-  const { discussionId } = req.params; // Use discussionId from the request parameters
-  const { replyId, content, author, email, profileImage } = req.body; // Expect content and author in the request body
+  const { discussionId } = req.params; // Get discussionId from URL params
+  const { replyId, content, author } = req.body; // Destructure body fields
 
   try {
-    // Make sure to find the discussion using discussionId
+    // Find and update the discussion with the new reply
     const discussion = await Discussions.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(discussionId) }, // Query using the custom discussionId
+      { _id: new mongoose.Types.ObjectId(discussionId) }, // Find discussion by ID
       {
         $push: {
           replies: {
-            replyId,
-            content,
+            replyId, // Set replyId
+            content, // Reply content
             author,
-            email,
-            profileImage,
-            createdAt: new Date(), // Set the current time for the reply
+            createdAt: new Date(), // Set the current timestamp for the reply
+            likes: [], // Initialize with an empty array of likes
           },
         },
       },
-      { new: true } // Return the updated discussion
+      { new: true } // Return the updated discussion after adding the reply
     );
 
     if (!discussion) {
       return res.status(404).json({ message: "Discussion not found" });
     }
 
-    res.status(200).json(discussion); // Return the updated discussion
+    // Return the updated discussion with the new reply
+    res.status(200).json(discussion);
   } catch (error) {
     console.error("Error adding reply:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 // Increment views
 // Increment views
 router.patch("/:discussionId/incrementViews", async (req, res) => {
