@@ -121,7 +121,7 @@ router.post("/", async (req, res) => {
 });
 
 //deleting class
-router.delete('/delete/:id', async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   try {
     const classId = req.params.id;
     const deletedClass = await Class.deleteOne({ classId });
@@ -191,6 +191,28 @@ router.get("/classid", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+//leave class for student
+router.patch("/leave/:classId", async (req, res) => {
+  const { classId } = req.params;
+  const { email } = req.query;
+
+  try {
+    const result = await Class.updateOne(
+      { classId: classId }, // Filter to find the specific class
+      { $pull: { students: { email: email } } }, // Remove student by email
+      { new: true } // Optionally, to return the modified document
+    );
+
+    if (result.modifiedCount > 0) {
+      res.status(200).json({ message: "You Left the class!", result });
+    } else {
+      res.status(404).json({ message: "Student or class not found" });
+    }
+  } catch (error) {
+    console.error("Error removing student:", error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+});
 
 // Patch for adding assignment
 router.patch("/:classId", upload.single("file"), async (req, res) => {
@@ -232,7 +254,7 @@ router.patch("/:classId", upload.single("file"), async (req, res) => {
           : { message: "Class not found" }
       );
   } catch (err) {
-  res.status(500).json({ message: `${err.message},500 error` });
+    res.status(500).json({ message: `${err.message},500 error` });
   }
 });
 
@@ -255,7 +277,6 @@ router.patch("/:classId/students", async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
-
 
 // Patch for updating meet link
 router.patch("/:classId/meetlink", async (req, res) => {
@@ -448,61 +469,62 @@ router.patch(
 router.get("/assignments/teacher", async (req, res) => {
   const { email } = req.query;
   if (!email) {
-      return res
-          .status(400)
-          .json({ message: "Email query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
   }
   try {
-      const assignments = await Class.find(
-          { "teacher.email": email },
-          { assignments: 1 }
-      );
-      res.send(assignments);
+    const assignments = await Class.find(
+      { "teacher.email": email },
+      { assignments: 1 }
+    );
+    res.send(assignments);
   } catch (err) {
-      res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 router.get("/assignments/student", async (req, res) => {
   const { email } = req.query;
   if (!email) {
-      return res
-          .status(400)
-          .json({ message: "Email query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
   }
   try {
-      const assignments = await Class.find(
-          { "students.email": email },
-          { assignments: 1 }
-      );
-      res.send(assignments);
+    const assignments = await Class.find(
+      { "students.email": email },
+      { assignments: 1 }
+    );
+    res.send(assignments);
   } catch (err) {
-      res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 router.patch("/assignments/deadline", async (req, res) => {
   const { deadline } = req.body;
-  const { id, classId } = req.query; 
+  const { id, classId } = req.query;
 
   if (!deadline) {
     return res.status(400).json({ message: "Deadline is required" });
   }
   if (!id || !classId) {
-    return res.status(400).json({ message: "Assignment ID and Class ID are required" });
+    return res
+      .status(400)
+      .json({ message: "Assignment ID and Class ID are required" });
   }
 
   try {
-    
     const result = await Class.findOneAndUpdate(
-      { classId: classId, "assignments._id": id }, 
-      { $set: { "assignments.$.end": deadline } }, 
-      { new: true } 
+      { classId: classId, "assignments._id": id },
+      { $set: { "assignments.$.end": deadline } },
+      { new: true }
     );
 
     if (!result) {
       return res.status(404).json({ message: "Assignment not found" });
     }
 
-    res.send(result); 
+    res.send(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -511,13 +533,11 @@ router.patch("/assignments/deadline", async (req, res) => {
 router.get("/count", async (req, res) => {
   const { email } = req.query;
   try {
-    const classes = await Class.countDocuments({"teacher.email": email});
-    res.status(200).send({count:classes});
+    const classes = await Class.countDocuments({ "teacher.email": email });
+    res.status(200).send({ count: classes });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-})
-
-
+});
 
 module.exports = router;
