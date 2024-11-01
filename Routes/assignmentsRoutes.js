@@ -12,7 +12,63 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Multer storage configuration for Cloudinary submit assignments
+// Storage for added assignment
+const addedAssignmentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'ClassNet/added-assignments',
+    resource_type: 'auto', // Ensures PDFs, DOCX, etc., are treated correctly
+    use_filename: true, // Preserve original filename
+  },
+});
+
+const addedAssignments = multer({ storage: addedAssignmentStorage });
+
+// Patch for adding assignment
+router.patch("/:classId", addedAssignments.single("file"), async (req, res) => {
+  const { classId } = req.params;
+  const { title, description, marks, end } = req.body;
+
+  if (!title || !description || !marks || !end || !req.file) {
+    return res
+      .status(400)
+      .json({ message: "Missing required fields for the assignment" });
+  }
+
+  const marksInt = parseInt(marks);
+
+  const { originalname, path, filename } = req.file;
+
+  const newAssignment = {
+    classId,
+    title,
+    description,
+    marks: marksInt,
+    start: new Date(),
+    end,
+    added_file: { originalname, filename, path },
+  };
+
+  try {
+    const updatedClass = await Class.findOneAndUpdate(
+      { classId: classId },
+      { $push: { assignments: newAssignment } },
+      { new: true }
+    );
+
+    res
+      .status(updatedClass ? 200 : 404)
+      .json(
+        updatedClass
+          ? { message: "Assignment added successfully", updatedClass }
+          : { message: "Class not found" }
+      );
+  } catch (err) {
+    res.status(500).json({ message: `${err.message},500 error` });
+  }
+});
+
+// Multer submit assignments storage configuration for Cloudinary 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {

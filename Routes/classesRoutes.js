@@ -55,40 +55,6 @@ const sendEmailNotification = async (
 
 // Middleware for authentication
 
-// Upload directory
-const uploadDir = process.env.UPLOAD_DIR || "/tmp/assignmentUploads"; // Use /tmp for serverless environments
-
-// Ensure 'assignmentUploads' directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer setup for teachers assignment uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /pdf|doc|docx/; // Allowed file types
-  const isValidExt = allowedFileTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-  const isValidMime = allowedFileTypes.test(file.mimetype);
-
-  if (isValidExt && isValidMime) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only PDF and DOC/DOCX files are allowed!"), false);
-  }
-};
-
-const upload = multer({ storage, fileFilter });
-
 // Fetch all classes
 router.get("/", async (req, res) => {
   try {
@@ -215,48 +181,48 @@ router.patch("/leave/:classId", async (req, res) => {
 });
 
 // Patch for adding assignment
-router.patch("/:classId", upload.single("file"), async (req, res) => {
-  const { classId } = req.params;
-  const { title, description, marks, end } = req.body;
+// router.patch("/:classId", upload.single("file"), async (req, res) => {
+//   const { classId } = req.params;
+//   const { title, description, marks, end } = req.body;
 
-  if (!title || !description || !marks || !end || !req.file) {
-    return res
-      .status(400)
-      .json({ message: "Missing required fields for the assignment" });
-  }
+//   if (!title || !description || !marks || !end || !req.file) {
+//     return res
+//       .status(400)
+//       .json({ message: "Missing required fields for the assignment" });
+//   }
 
-  const marksInt = parseInt(marks);
+//   const marksInt = parseInt(marks);
 
-  const fileUrl = `/assignmentUploads/${req.file.filename}`;
+//   const fileUrl = `/assignmentUploads/${req.file.filename}`;
 
-  const newAssignment = {
-    classId,
-    title,
-    description,
-    marks: marksInt,
-    start: new Date(),
-    end,
-    fileUrl,
-  };
+//   const newAssignment = {
+//     classId,
+//     title,
+//     description,
+//     marks: marksInt,
+//     start: new Date(),
+//     end,
+//     fileUrl,
+//   };
 
-  try {
-    const updatedClass = await Class.findOneAndUpdate(
-      { classId: classId },
-      { $push: { assignments: newAssignment } },
-      { new: true }
-    );
+//   try {
+//     const updatedClass = await Class.findOneAndUpdate(
+//       { classId: classId },
+//       { $push: { assignments: newAssignment } },
+//       { new: true }
+//     );
 
-    res
-      .status(updatedClass ? 200 : 404)
-      .json(
-        updatedClass
-          ? { message: "Assignment added successfully", updatedClass }
-          : { message: "Class not found" }
-      );
-  } catch (err) {
-    res.status(500).json({ message: `${err.message},500 error` });
-  }
-});
+//     res
+//       .status(updatedClass ? 200 : 404)
+//       .json(
+//         updatedClass
+//           ? { message: "Assignment added successfully", updatedClass }
+//           : { message: "Class not found" }
+//       );
+//   } catch (err) {
+//     res.status(500).json({ message: `${err.message},500 error` });
+//   }
+// });
 
 // Patch students to a class
 router.patch("/:classId/students", async (req, res) => {
@@ -321,24 +287,6 @@ router.get("/meetlink", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch meet link", error });
   }
-});
-
-// Route to download assignment files
-router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(uploadDir, filename);
-
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      return res.status(404).json({ message: "File not found" });
-    }
-
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error downloading file", err });
-      }
-    });
-  });
 });
 
 // Route to delete a specific added assignment
