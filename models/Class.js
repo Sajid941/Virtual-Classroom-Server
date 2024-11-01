@@ -79,7 +79,7 @@ const assignmentsSubmissions = new mongoose.Schema({
     required: true,
   },
   submit_file: {
-    type: String,
+    type: Object,
     required: true,
   },
   submitAt: {

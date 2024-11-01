@@ -49,6 +49,7 @@ const discussionsRoute = require("../Routes/discussionsRoutes");
 const chatRoute = require("../Routes/chatRoutes");
 const authController = require("../controllers/authController");
 const paymentRoute = require("../Routes/paymentRoutes");
+const assignmentRoute = require("../Routes/assignmentsRoutes")
 
 // Routes
 app.use("/users", userRoute);
@@ -59,6 +60,7 @@ app.use("/discussions", verifyToken, discussionsRoute);
 app.use("/chats", chatRoute);
 app.use("/jwt", authController);
 app.use("/payment", paymentRoute);
+app.use("/assignment", assignmentRoute);
 
 const server = createServer(app);
 const io = new Server(server, {
