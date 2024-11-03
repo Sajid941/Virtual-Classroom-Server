@@ -55,40 +55,6 @@ const sendEmailNotification = async (
 
 // Middleware for authentication
 
-// Upload directory
-const uploadDir = process.env.UPLOAD_DIR || "/tmp/assignmentUploads"; // Use /tmp for serverless environments
-
-// Ensure 'assignmentUploads' directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer setup for teachers assignment uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /pdf|doc|docx/; // Allowed file types
-  const isValidExt = allowedFileTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-  const isValidMime = allowedFileTypes.test(file.mimetype);
-
-  if (isValidExt && isValidMime) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only PDF and DOC/DOCX files are allowed!"), false);
-  }
-};
-
-const upload = multer({ storage, fileFilter });
-
 // Fetch all classes
 router.get("/", async (req, res) => {
   try {
@@ -121,7 +87,7 @@ router.post("/", async (req, res) => {
 });
 
 //deleting class
-router.delete('/delete/:id', async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   try {
     const classId = req.params.id;
     const deletedClass = await Class.deleteOne({ classId });
@@ -191,50 +157,72 @@ router.get("/classid", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-// Patch for adding assignment
-router.patch("/:classId", upload.single("file"), async (req, res) => {
+//leave class for student
+router.patch("/leave/:classId", async (req, res) => {
   const { classId } = req.params;
-  const { title, description, marks, end } = req.body;
-
-  if (!title || !description || !marks || !end || !req.file) {
-    return res
-      .status(400)
-      .json({ message: "Missing required fields for the assignment" });
-  }
-
-  const marksInt = parseInt(marks);
-
-  const fileUrl = `/assignmentUploads/${req.file.filename}`;
-
-  const newAssignment = {
-    classId,
-    title,
-    description,
-    marks: marksInt,
-    start: new Date(),
-    end,
-    fileUrl,
-  };
+  const { email } = req.query;
 
   try {
-    const updatedClass = await Class.findOneAndUpdate(
-      { classId: classId },
-      { $push: { assignments: newAssignment } },
-      { new: true }
+    const result = await Class.updateOne(
+      { classId: classId }, // Filter to find the specific class
+      { $pull: { students: { email: email } } }, // Remove student by email
+      { new: true } // Optionally, to return the modified document
     );
 
-    res
-      .status(updatedClass ? 200 : 404)
-      .json(
-        updatedClass
-          ? { message: "Assignment added successfully", updatedClass }
-          : { message: "Class not found" }
-      );
-  } catch (err) {
-  res.status(500).json({ message: `${err.message},500 error` });
+    if (result.modifiedCount > 0) {
+      res.status(200).json({ message: "You Left the class!", result });
+    } else {
+      res.status(404).json({ message: "Student or class not found" });
+    }
+  } catch (error) {
+    console.error("Error removing student:", error);
+    res.status(500).json({ message: "An error occurred", error });
   }
 });
+
+// Patch for adding assignment
+// router.patch("/:classId", upload.single("file"), async (req, res) => {
+//   const { classId } = req.params;
+//   const { title, description, marks, end } = req.body;
+
+//   if (!title || !description || !marks || !end || !req.file) {
+//     return res
+//       .status(400)
+//       .json({ message: "Missing required fields for the assignment" });
+//   }
+
+//   const marksInt = parseInt(marks);
+
+//   const fileUrl = `/assignmentUploads/${req.file.filename}`;
+
+//   const newAssignment = {
+//     classId,
+//     title,
+//     description,
+//     marks: marksInt,
+//     start: new Date(),
+//     end,
+//     fileUrl,
+//   };
+
+//   try {
+//     const updatedClass = await Class.findOneAndUpdate(
+//       { classId: classId },
+//       { $push: { assignments: newAssignment } },
+//       { new: true }
+//     );
+
+//     res
+//       .status(updatedClass ? 200 : 404)
+//       .json(
+//         updatedClass
+//           ? { message: "Assignment added successfully", updatedClass }
+//           : { message: "Class not found" }
+//       );
+//   } catch (err) {
+//     res.status(500).json({ message: `${err.message},500 error` });
+//   }
+// });
 
 // Patch students to a class
 router.patch("/:classId/students", async (req, res) => {
@@ -255,7 +243,6 @@ router.patch("/:classId/students", async (req, res) => {
     res.status(500).json({ message: "Failed to add students", error });
   }
 });
-
 
 // Patch for updating meet link
 router.patch("/:classId/meetlink", async (req, res) => {
@@ -302,24 +289,6 @@ router.get("/meetlink", async (req, res) => {
   }
 });
 
-// Route to download assignment files
-router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(uploadDir, filename);
-
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      return res.status(404).json({ message: "File not found" });
-    }
-
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error downloading file", err });
-      }
-    });
-  });
-});
-
 // Route to delete a specific added assignment
 router.delete("/delete-assignment/:id", async (req, res) => {
   const { id } = req.params;
@@ -338,94 +307,6 @@ router.delete("/delete-assignment/:id", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
-
-// multer storage for submitted assignment
-// const submitDir = path.join(__dirname, '../submittedAssignments');
-const submitDir = process.env.SUBMIT_DIR || "/tmp/submittedAssignments";
-
-// Ensure 'submittedAssignments' directory exists
-if (!fs.existsSync(submitDir)) {
-  fs.mkdirSync(submitDir, { recursive: true });
-}
-
-// Multer setup for student assignment submit
-const submitAssignmentStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, submitDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const submit = multer({ storage: submitAssignmentStorage });
-// route to submit assignment of students
-router.patch(
-  "/:classId/assignments/:assignmentId/submissions",
-  submit.single("submit_file"),
-  async (req, res) => {
-    const { classId, assignmentId } = req.params;
-    const { student_name, student_email } = req.body;
-
-    if (!student_name || !student_email || !req.file) {
-      return res
-        .status(400)
-        .json({ message: "Missing input data for submission" });
-    }
-
-    const fileUrl = `/submittedAssignments/${req.file.filename}`;
-
-    const newAssignmentSubmission = {
-      student_name,
-      student_email,
-      submit_file: fileUrl,
-      submitAt: new Date(),
-    };
-
-    try {
-      const updatedClass = await Class.findOneAndUpdate(
-        {
-          classId: classId,
-          "assignments._id": assignmentId,
-        },
-        {
-          $push: {
-            "assignments.$.assignmentSubmissions": newAssignmentSubmission,
-          },
-        },
-        { new: true }
-      );
-
-      if (!updatedClass) {
-        return res
-          .status(404)
-          .json({ message: "Class or Assignment not found" });
-      }
-
-      res.status(200).json({ message: "Submitted successfully", updatedClass });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-);
-
-// Route to download submitted assignment files
-router.get("/submitted-file-download/:filename", async (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(submitDir, filename);
-
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      return res.status(404).json({ message: "File not found" });
-    }
-
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error downloading file", err });
-      }
-    });
-  });
 });
 
 // Route to get all assignment submissions of classes based on user role
@@ -536,61 +417,62 @@ router.patch(
 router.get("/assignments/teacher", async (req, res) => {
   const { email } = req.query;
   if (!email) {
-      return res
-          .status(400)
-          .json({ message: "Email query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
   }
   try {
-      const assignments = await Class.find(
-          { "teacher.email": email },
-          { assignments: 1 }
-      );
-      res.send(assignments);
+    const assignments = await Class.find(
+      { "teacher.email": email },
+      { assignments: 1 }
+    );
+    res.send(assignments);
   } catch (err) {
-      res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 router.get("/assignments/student", async (req, res) => {
   const { email } = req.query;
   if (!email) {
-      return res
-          .status(400)
-          .json({ message: "Email query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "Email query parameter is required" });
   }
   try {
-      const assignments = await Class.find(
-          { "students.email": email },
-          { assignments: 1 }
-      );
-      res.send(assignments);
+    const assignments = await Class.find(
+      { "students.email": email },
+      { assignments: 1 }
+    );
+    res.send(assignments);
   } catch (err) {
-      res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 router.patch("/assignments/deadline", async (req, res) => {
   const { deadline } = req.body;
-  const { id, classId } = req.query; 
+  const { id, classId } = req.query;
 
   if (!deadline) {
     return res.status(400).json({ message: "Deadline is required" });
   }
   if (!id || !classId) {
-    return res.status(400).json({ message: "Assignment ID and Class ID are required" });
+    return res
+      .status(400)
+      .json({ message: "Assignment ID and Class ID are required" });
   }
 
   try {
-    
     const result = await Class.findOneAndUpdate(
-      { classId: classId, "assignments._id": id }, 
-      { $set: { "assignments.$.end": deadline } }, 
-      { new: true } 
+      { classId: classId, "assignments._id": id },
+      { $set: { "assignments.$.end": deadline } },
+      { new: true }
     );
 
     if (!result) {
       return res.status(404).json({ message: "Assignment not found" });
     }
 
-    res.send(result); 
+    res.send(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -599,13 +481,11 @@ router.patch("/assignments/deadline", async (req, res) => {
 router.get("/count", async (req, res) => {
   const { email } = req.query;
   try {
-    const classes = await Class.countDocuments({"teacher.email": email});
-    res.status(200).send({count:classes});
+    const classes = await Class.countDocuments({ "teacher.email": email });
+    res.status(200).send({ count: classes });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-})
-
-
+});
 
 module.exports = router;

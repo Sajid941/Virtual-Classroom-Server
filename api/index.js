@@ -34,7 +34,7 @@ mongoose
         { useNewUrlParser: true, useUnifiedTopology: true }
     )
     .then(() => {
-        console.log("MongoDB Connected");
+        // console.log("MongoDB Connected");
     })
     .catch((err) => {
         console.error("MongoDB connection error:", err);
@@ -49,6 +49,7 @@ const discussionsRoute = require("../Routes/discussionsRoutes");
 const chatRoute = require("../Routes/chatRoutes");
 const authController = require("../controllers/authController");
 const paymentRoute = require("../Routes/paymentRoutes");
+const assignmentRoute = require("../Routes/assignmentsRoutes")
 
 // Routes
 app.use("/users", userRoute);
@@ -59,6 +60,7 @@ app.use("/discussions", verifyToken, discussionsRoute);
 app.use("/chats", chatRoute);
 app.use("/jwt", authController);
 app.use("/payment", paymentRoute);
+app.use("/assignment", assignmentRoute);
 
 const server = createServer(app);
 const io = new Server(server, {
@@ -74,11 +76,11 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    // console.log("A user connected:", socket.id);
 
     socket.on("joinClassroom", async (classroomId) => {
         socket.join(classroomId);
-        console.log(`User joined classroom: ${classroomId}`);
+        // console.log(`User joined classroom: ${classroomId}`);
 
         const chat = await Chat.findOne({ classroomId });
         if (chat) {
@@ -92,7 +94,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        console.log("User disconnected");
+        // console.log("User disconnected");
     });
 });
 
