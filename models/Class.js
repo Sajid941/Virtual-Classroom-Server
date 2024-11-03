@@ -79,7 +79,7 @@ const assignmentsSubmissions = new mongoose.Schema({
     required: true,
   },
   submit_file: {
-    type: String,
+    type: Object,
     required: true,
   },
   submitAt: {
@@ -123,8 +123,8 @@ const assignmentSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  fileUrl: {
-    type: String, // Path to the uploaded file
+  added_file: {
+    type: Object,
     required: true,
   },
   classId: {
