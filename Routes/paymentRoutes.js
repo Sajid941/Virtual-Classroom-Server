@@ -69,7 +69,7 @@ router.post("/create-payment", async (req, res) => {
 
 router.post("/success-payment", async (req, res) => {
     const successData = req.body;
-    console.log(successData);
+    // console.log(successData);
 
     if (successData.status !== "VALID") {
         throw new Error("Payment failed");
@@ -97,12 +97,12 @@ router.post("/success-payment", async (req, res) => {
 
 router.post("/cancel-payment", async (req, res) => {
     const cancelData = req.body;
-    console.log(cancelData);
+    // console.log(cancelData);
     res.redirect(`${process.env.CLIENT_URL}/paymentCancel`);
 });
 router.post("/fail-payment", async (req, res) => {
     const failedData = req.body;
-    console.log(failedData);
+    // console.log(failedData);
     res.redirect(`${process.env.CLIENT_URL}/paymentFailed`);
 });
 

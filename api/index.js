@@ -34,7 +34,7 @@ mongoose
         { useNewUrlParser: true, useUnifiedTopology: true }
     )
     .then(() => {
-        console.log("MongoDB Connected");
+        // console.log("MongoDB Connected");
     })
     .catch((err) => {
         console.error("MongoDB connection error:", err);
@@ -76,11 +76,11 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    // console.log("A user connected:", socket.id);
 
     socket.on("joinClassroom", async (classroomId) => {
         socket.join(classroomId);
-        console.log(`User joined classroom: ${classroomId}`);
+        // console.log(`User joined classroom: ${classroomId}`);
 
         const chat = await Chat.findOne({ classroomId });
         if (chat) {
@@ -94,7 +94,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        console.log("User disconnected");
+        // console.log("User disconnected");
     });
 });
 
