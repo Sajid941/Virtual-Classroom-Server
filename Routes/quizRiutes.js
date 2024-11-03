@@ -41,7 +41,7 @@ router.get("/:classId/quizsubmission/:studentEmail", async (req, res) => {
   const submission = quiz.submissions.find(
     (submission) => submission.studentEmail === studentEmail
   );
-  console.log(submission);
+  // console.log(submission);
   if (submission) {
     return res.status(200).json({
       message: "Student has already submitted this quiz",
@@ -54,7 +54,7 @@ router.get("/:classId/quizsubmission/:studentEmail", async (req, res) => {
 router.put("/quizsubmission/:classId", async (req, res) => {
   const { classId } = req.params;
   const { submissionData } = req.body;
-  console.log(classId, submissionData);
+  // console.log(classId, submissionData);
   try {
     // Step 1: Find the class by classId
     const classData = await Class.findOne({ classId });
@@ -79,7 +79,7 @@ router.put("/quizsubmission/:classId", async (req, res) => {
 
     // Step 6: Save the updated class data
     await classData.save();
-    console.log(classData);
+    // console.log(classData);
 
     // Step 7: Return the updated class data with success response
     res.status(200).json(classData);
